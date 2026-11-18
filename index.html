@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="在动物小镇图书馆里，点击听美式英语，帮小兔借到读书会需要的书。">
+  <meta name="theme-color" content="#122a2f">
+  <title>动物小镇 · 图书馆探险</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="src/styles.css">
+  <script defer src="src/app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#dialogue">跳到对话</a>
+  <header class="masthead">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"><i></i></span><strong>动物小镇</strong></div>
+    <span class="language">标准美式英语 <span lang="en-US">EN-US</span></span>
+  </header>
+  <main class="ground">
+    <header class="intro">
+      <h1>帮小兔借书</h1>
+      <p>读书会缺一本 <cite lang="en-US">The Moon Map</cite>。听听馆员怎么说，带小兔找到能借走的那一本。</p>
+    </header>
+
+    <div class="mission-grid">
+      <section class="exploration" aria-label="图书馆地图">
+        <div class="scene" id="library" data-stage="0" data-variant="window">
+          <div class="plan" id="plan" role="group" aria-label="图书馆地图，可以点选地点">
+            <div class="stars" aria-hidden="true"></div>
+            <div class="backdrop" aria-hidden="true"></div>
+            <div class="loft floor" aria-hidden="true"></div>
+            <div class="tile-floor floor" aria-hidden="true"></div>
+            <div class="window" aria-hidden="true"></div>
+            <div class="shelves shelves--upper" aria-hidden="true"></div>
+            <div class="shelves shelves--lower" aria-hidden="true"></div>
+            <div class="stairs" aria-hidden="true"></div>
+            <div class="cart cart--shelf" aria-hidden="true"></div>
+            <div class="cart cart--window" aria-hidden="true"></div>
+            <div class="counter" aria-hidden="true"></div>
+            <div class="route route--stairs" aria-hidden="true"></div>
+            <div class="route route--shelf" aria-hidden="true"></div>
+            <div class="route route--window" aria-hidden="true"></div>
+            <div class="animal animal--beaver desk-beaver" aria-hidden="true"><i></i></div>
+            <div class="animal animal--rabbit plan-rabbit" aria-hidden="true"><i></i></div>
+            <span class="place place--upper">二楼</span>
+            <span class="place place--lower">一楼</span>
+            <button type="button" class="place place--window" data-map-place="window">窗边还书车</button>
+            <button type="button" class="place place--shelf" data-map-place="shelf">书架边还书车</button>
+            <button type="button" class="place place--desk" data-map-place="desk">借阅台</button>
+            <button type="button" class="place place--books" data-map-place="books">书架</button>
+          </div>
+          <div class="three" id="three" hidden role="img" aria-label="图书馆的立体模型"></div>
+        </div>
+        <div class="view-bar">
+          <p class="room-status"><i aria-hidden="true"></i><span id="room-status">小兔在一楼借阅台</span></p>
+          <div class="view-actions">
+            <button type="button" class="quiet view-control" id="viewpoint" hidden>看小兔视角</button>
+            <button type="button" class="quiet view-control" id="dimension" aria-controls="three" aria-expanded="false">打开 3D</button>
+          </div>
+        </div>
+        <p class="model-message" id="model-message" hidden role="status"></p>
+        <p class="feedback" id="feedback" role="status" hidden></p>
+      </section>
+
+      <section class="dialogue" id="dialogue" aria-labelledby="step-title">
+        <div class="steps" aria-label="借书进度">
+          <span data-track="0" aria-current="step">问线索</span>
+          <span data-track="1">带路</span>
+          <span data-track="2">借到书</span>
+        </div>
+        <h2 id="step-title">小兔找到了一本书</h2>
+        <div class="speech">
+          <div class="speaker">
+            <div class="animal animal--rabbit" id="speaker-art" aria-hidden="true"><i></i></div>
+            <span id="speaker">小兔</span>
+          </div>
+          <p lang="en-US" id="speaker-line">I found a copy, but I can't take it home.</p>
+          <button type="button" class="primary listen" id="listen">
+            <span class="play-mark" aria-hidden="true"></span><span id="listen-label">播放美式英语</span>
+          </button>
+          <p class="media-message" id="media-message" role="status"></p>
+        </div>
+        <div class="actions">
+          <div class="choice-row" id="route-choices" hidden>
+            <button class="choice" type="button" data-cart="window">去窗边还书车</button>
+            <button class="choice" type="button" data-cart="shelf">去书架边还书车</button>
+          </div>
+          <button type="button" class="choice full" id="advance">问问馆员</button>
+          <details class="practice">
+            <summary>听一句怎么说</summary>
+            <p lang="en-US" id="practice-line">Is there another copy I can check out?</p>
+            <button class="quiet practice-play" type="button" id="practice-play"><span class="play-mark" aria-hidden="true"></span>播放示范</button>
+          </details>
+        </div>
+      </section>
+    </div>
+  </main>
+  <audio id="voice" preload="metadata" src="audio/rabbit-welcome.m4a"></audio>
+</body>
+</html>
