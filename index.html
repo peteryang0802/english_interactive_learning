@@ -3,98 +3,89 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="在动物小镇图书馆里，点击听美式英语，帮小兔借到读书会需要的书。">
   <meta name="theme-color" content="#122a2f">
-  <title>动物小镇 · 图书馆探险</title>
+  <title>动物小镇 · 第一关：书在哪儿</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="src/styles.css">
-  <script defer src="src/app.js?v=3"></script>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="app.js"></script>
 </head>
 <body>
-  <a class="skip" href="#dialogue">跳到对话</a>
   <header class="masthead">
-    <div class="brand"><span class="brand-mark" aria-hidden="true"><i></i></span><strong>动物小镇</strong></div>
-    <span class="language">标准美式英语 <span lang="en-US">EN-US</span></span>
+    <div class="brand"><strong>动物小镇 · 第一关</strong></div>
+    <span class="language" lang="en-US">EN-US</span>
   </header>
-  <main class="ground">
-    <header class="intro">
-      <h1>帮小兔借书</h1>
-      <p>读书会缺一本 <cite lang="en-US">The Moon Map</cite>。听听馆员怎么说，带小兔找到能借走的那一本。</p>
-    </header>
 
-    <div class="mission-grid">
-      <section class="exploration" aria-label="图书馆地图">
-        <div class="scene" id="library" data-stage="0" data-variant="window">
-          <div class="plan" id="plan" role="group" aria-label="图书馆地图，可以点选地点">
-            <div class="stars" aria-hidden="true"></div>
-            <div class="backdrop" aria-hidden="true"></div>
-            <div class="loft floor" aria-hidden="true"></div>
-            <div class="tile-floor floor" aria-hidden="true"></div>
-            <div class="window" aria-hidden="true"></div>
-            <div class="shelves shelves--upper" aria-hidden="true"></div>
-            <div class="shelves shelves--lower" aria-hidden="true"></div>
-            <div class="stairs" aria-hidden="true"></div>
-            <div class="cart cart--shelf" aria-hidden="true"></div>
-            <div class="cart cart--window" aria-hidden="true"></div>
-            <div class="counter" aria-hidden="true"></div>
-            <div class="route route--stairs" aria-hidden="true"></div>
-            <div class="route route--shelf" aria-hidden="true"></div>
-            <div class="route route--window" aria-hidden="true"></div>
-            <div class="animal animal--beaver desk-beaver" aria-hidden="true"><i></i></div>
-            <div class="animal animal--rabbit plan-rabbit" aria-hidden="true"><i></i></div>
-            <span class="place place--upper">二楼</span>
-            <span class="place place--lower">一楼</span>
-            <button type="button" class="place place--window" data-map-place="window">窗边还书车</button>
-            <button type="button" class="place place--shelf" data-map-place="shelf">书架边还书车</button>
-            <button type="button" class="place place--desk" data-map-place="desk">借阅台</button>
-            <button type="button" class="place place--books" data-map-place="books">书架</button>
-          </div>
-          <div class="three" id="three" hidden role="img" aria-label="图书馆的立体模型"></div>
-        </div>
-        <div class="view-bar">
-          <p class="room-status"><i aria-hidden="true"></i><span id="room-status">小兔在一楼借阅台</span></p>
-          <div class="view-actions">
-            <button type="button" class="quiet view-control" id="viewpoint" hidden>看小兔视角</button>
-            <button type="button" class="quiet view-control" id="dimension" aria-controls="three" aria-expanded="false">打开 3D</button>
-          </div>
-        </div>
-        <p class="model-message" id="model-message" hidden role="status"></p>
-        <p class="feedback" id="feedback" role="status" hidden></p>
-      </section>
+  <main class="wrap">
+    <!-- 开始入口 -->
+    <section class="start-card" id="start-card">
+      <h1>帮小兔找到书</h1>
+      <p>戴上小耳朵，听河狸馆员说，再点你听到的那本书。</p>
+      <button type="button" class="big-btn" id="start-btn">开始探险</button>
+    </section>
 
-      <section class="dialogue" id="dialogue" aria-labelledby="step-title">
-        <div class="steps" aria-label="借书进度">
-          <span data-track="0" aria-current="step">问线索</span>
-          <span data-track="1">带路</span>
-          <span data-track="2">借到书</span>
+    <!-- 主流程 -->
+    <section class="stage-card" id="stage-card" hidden>
+      <div class="progress" id="progress" aria-label="闯关进度"></div>
+
+      <div class="speaker-row">
+        <div class="avatar avatar--beaver" id="avatar" aria-hidden="true"></div>
+        <div class="speaker-meta">
+          <span id="speaker-name">河狸馆员</span>
+          <p class="en-line" id="en-line" hidden></p>
         </div>
-        <h2 id="step-title">小兔找到了一本书</h2>
-        <div class="speech">
-          <div class="speaker">
-            <div class="animal animal--rabbit" id="speaker-art" aria-hidden="true"><i></i></div>
-            <span id="speaker">小兔</span>
+      </div>
+
+      <!-- 场景：可点的书 -->
+      <div class="scene" id="scene">
+        <div class="surface" id="surface">
+          <!-- 两本书由 JS 渲染 -->
+        </div>
+      </div>
+
+      <!-- 控制条：重听 + 字幕求助，始终和书同屏 -->
+      <div class="control-bar">
+        <button type="button" class="ctrl" id="replay-btn">
+          <span class="horn" aria-hidden="true"></span>再听一次
+        </button>
+        <button type="button" class="ctrl ghost" id="caption-btn">看字幕</button>
+        <button type="button" class="ctrl ghost" id="demo-btn">看示范</button>
+      </div>
+
+      <p class="tip" id="tip" role="status"></p>
+
+      <!-- 示范弹层 -->
+      <div class="modal" id="demo-modal" hidden>
+        <div class="modal-box">
+          <h2>看馆员怎么做</h2>
+          <div class="demo-stage" id="demo-stage"></div>
+          <button type="button" class="big-btn" id="demo-close">我看懂了，换一题</button>
+        </div>
+      </div>
+
+      <!-- 开口环节 -->
+      <div class="modal" id="speak-modal" hidden>
+        <div class="modal-box">
+          <h2>对馆员说一句</h2>
+          <p class="speak-en" lang="en-US">Can I check this out, please?</p>
+          <div class="speak-actions">
+            <button type="button" class="ctrl" id="speak-listen"><span class="horn" aria-hidden="true"></span>听范音</button>
+            <button type="button" class="big-btn" id="speak-done">我来说 / 直接借书</button>
           </div>
-          <p lang="en-US" id="speaker-line">I found a copy, but I can't take it home.</p>
-          <button type="button" class="primary listen" id="listen">
-            <span class="play-mark" aria-hidden="true"></span><span id="listen-label">播放美式英语</span>
-          </button>
-          <p class="media-message" id="media-message" role="status"></p>
+          <button type="button" class="skip-link" id="speak-skip">先不说，跳过</button>
         </div>
-        <div class="actions">
-          <div class="choice-row" id="route-choices" hidden>
-            <button class="choice" type="button" data-cart="window">去窗边还书车</button>
-            <button class="choice" type="button" data-cart="shelf">去书架边还书车</button>
-          </div>
-          <button type="button" class="choice full" id="advance">问问馆员</button>
-          <details class="practice">
-            <summary>听一句怎么说</summary>
-            <p lang="en-US" id="practice-line">Is there another copy I can check out?</p>
-            <button class="quiet practice-play" type="button" id="practice-play"><span class="play-mark" aria-hidden="true"></span>播放示范</button>
-          </details>
+      </div>
+
+      <!-- 完成 -->
+      <div class="modal" id="done-modal" hidden>
+        <div class="modal-box">
+          <h2>书借到啦</h2>
+          <div class="report" id="report"></div>
+          <button type="button" class="big-btn" id="again-btn">再玩一次</button>
         </div>
-      </section>
-    </div>
+      </div>
+    </section>
   </main>
-  <audio id="voice" preload="metadata" src="audio/rabbit-welcome.m4a?v=3"></audio>
+
+  <audio id="voice" preload="auto"></audio>
 </body>
 </html>
