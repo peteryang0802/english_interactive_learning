@@ -1,4 +1,9 @@
 import * as THREE from '../vendor/three.module.js';
+import { makeBeaver } from './characters.js';
+import {
+  makeBookshelf, makeTable, makeChair, makeLamp, makeRug,
+  makeWindow, makeClock, makePlant, makeDesk,
+} from './props.js';
 
 // 3D 图书馆：只负责渲染 3D 物体和点击拾取，判定与音频由 main.js 负责
 export function createLibraryScene(container) {
@@ -57,16 +62,40 @@ export function createLibraryScene(container) {
   wall.position.set(0, 3.5, -5);
   scene.add(wall);
 
-  // 背景书架
-  for (let i = -2; i <= 2; i++) {
-    const shelf = new THREE.Mesh(
-      new THREE.BoxGeometry(1.6, 3.2, 0.5),
-      new THREE.MeshStandardMaterial({ color: 0x7a4a2e, roughness: 0.9 })
-    );
-    shelf.position.set(i * 1.8, 1.6, -4.7);
-    shelf.castShadow = true;
-    scene.add(shelf);
+  // ===== 房间布置：书架、家具、馆员 =====
+  const animators = [];
+  function addStatic(obj, x, y, z, rotY = 0) {
+    obj.position.set(x, y, z);
+    obj.rotation.y = rotY;
+    scene.add(obj);
+    if (obj.userData.animate) animators.push(obj.userData.animate);
+    return obj;
   }
+
+  // 后墙：两侧书架、中央窗户
+  addStatic(makeBookshelf(), -3.4, 0, -4.7);
+  addStatic(makeBookshelf(), 3.4, 0, -4.7);
+  addStatic(makeWindow(), 0, 2.0, -4.95);
+  addStatic(makeClock(), 0, 4.3, -4.9);
+
+  // 角落盆栽
+  addStatic(makePlant(), -5.6, 0, -4.5);
+  addStatic(makePlant(), 5.6, 0, -4.5);
+
+  // 左侧阅读区：圆桌 + 两把椅子 + 台灯
+  addStatic(makeTable(true), -4.4, 0, -1.2);
+  addStatic(makeChair(), -4.4, 0, 0.1, Math.PI);
+  addStatic(makeChair(), -5.6, 0, -1.2, Math.PI / 2);
+  addStatic(makeLamp(), -4.0, 0.95, -1.2);
+
+  // 右侧借书台 + 河狸馆员（站在台侧，面向孩子，全身可见）
+  addStatic(makeDesk(), 4.3, 0, -1.4);
+  const beaver = addStatic(makeBeaver(), 5.5, 0, -1.4);
+  beaver.rotation.y = -0.5;
+  beaver.scale.setScalar(1.05);
+
+  // 中心地毯（任务区下方，不挡拾取）
+  addStatic(makeRug(), 0, 0, 0.6);
 
   // 动态物体挂载点
   const dyn = new THREE.Group();
@@ -251,7 +280,10 @@ export function createLibraryScene(container) {
       raf = requestAnimationFrame(loop);
     }
   }
+  const clock = new THREE.Clock();
   function loop() {
+    const t = clock.getElapsedTime();
+    for (const a of animators) a(t);
     renderer.render(scene, camera);
     schedule();
   }

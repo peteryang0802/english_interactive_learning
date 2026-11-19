@@ -12,6 +12,24 @@ export const AUDIO = {
   'tap-next-box': 'audio/tap-next-box.m4a',
   'ask-checkout': 'audio/ask-checkout.m4a',
   'beaver-done': 'audio/beaver-done.m4a',
+  // 剧情对话（本轮新增）
+  'd-r-hi': 'audio/d-r-hi.m4a',
+  'd-b-hello': 'audio/d-b-hello.m4a',
+  'd-r-party': 'audio/d-r-party.m4a',
+  'd-b-find': 'audio/d-b-find.m4a',
+  'd-b-first': 'audio/d-b-first.m4a',
+  'd-b-book': 'audio/d-b-book.m4a',
+  'd-b-cart': 'audio/d-b-cart.m4a',
+  'd-b-on': 'audio/d-b-on.m4a',
+  'd-b-next': 'audio/d-b-next.m4a',
+  'd-b-try': 'audio/d-b-try.m4a',
+  'd-b-great': 'audio/d-b-great.m4a',
+  'd-b-nice': 'audio/d-b-nice.m4a',
+  'd-b-same': 'audio/d-b-same.m4a',
+  'd-b-ask': 'audio/d-b-ask.m4a',
+  'd-b-didit': 'audio/d-b-didit.m4a',
+  'd-r-thanks': 'audio/d-r-thanks.m4a',
+  'd-b-bye': 'audio/d-b-bye.m4a',
 };
 
 // 当前题音频是否真正成功播放

@@ -1,6 +1,7 @@
 import * as THREE from '../vendor/three.module.js';
 import { createTown } from './town.js';
 import { createLibraryScene } from './library.js';
+import { buildLibraryRun } from './story.js';
 import { AUDIO, audioState, playAudio, playThen, stopAudio } from './audio.js';
 
 const $ = (id) => document.getElementById(id);
@@ -24,7 +25,10 @@ const els = {
   hudTitle: $('hud-title'), back: $('back-btn'), bagCount: $('bag-count'),
   wrap: $('canvas-wrap'),
   progress: $('progress'), speaker: $('speaker-row'), control: $('control-bar'),
-  enLine: $('en-line'), caption: $('caption-btn'), replay: $('replay-btn'),
+  speakerAvatar: $('speaker-avatar'), speakerName: $('speaker-name'),
+  enLine: $('en-line'), zhLine: $('zh-line'),
+  dialogueBar: $('dialogue-bar'), dialogueReplay: $('dialogue-replay'), dialogueNext: $('dialogue-next'),
+  caption: $('caption-btn'), replay: $('replay-btn'),
   demoBtn: $('demo-btn'), tip: $('tip'),
   demoModal: $('demo-modal'), demoStage: $('demo-stage'), demoClose: $('demo-close'),
   speakModal: $('speak-modal'), speakListen: $('speak-listen'),
@@ -76,7 +80,7 @@ function enterLevel(id) {
   els.speaker.hidden = false;
   els.control.hidden = false;
 
-  steps = buildRun();
+  steps = buildLibraryRun();
   stepIndex = 0;
   record.firstCorrect = 0;
   record.quizTotal = 0;
@@ -87,22 +91,6 @@ function enterLevel(id) {
   current = createLibraryScene(els.wrap);
   current.onPick(handlePick);
   renderStep();
-}
-
-function buildRun() {
-  const list = [];
-  list.push({ type: 'check', target: 'book', audio: 'tap-book' });
-  list.push({ type: 'check', target: 'cart', audio: 'tap-cart' });
-  list.push({ type: 'demo' });
-  for (let i = 0; i < 4; i++) {
-    list.push({ type: 'quiz', holder: 'cart', relation: Math.random() < 0.5 ? 'on' : 'next' });
-  }
-  for (let i = 0; i < 2; i++) {
-    list.push({ type: 'quiz', holder: 'box', relation: Math.random() < 0.5 ? 'on' : 'next' });
-  }
-  list.push({ type: 'speak' });
-  list.push({ type: 'done' });
-  return list;
 }
 
 // ===== 进度条 =====
@@ -124,12 +112,57 @@ function renderStep() {
   const step = steps[stepIndex];
   els.enLine.hidden = true;
   els.caption.textContent = '看字幕';
+  const isDialogue = step.type === 'dialogue';
+  els.dialogueBar.hidden = !isDialogue;
+  els.control.hidden = isDialogue;
 
-  if (step.type === 'check') renderCheck(step);
+  if (step.type === 'dialogue') renderDialogue(step);
+  else if (step.type === 'check') renderCheck(step);
   else if (step.type === 'quiz') renderQuiz(step);
   else if (step.type === 'demo') openDemoStep();
   else if (step.type === 'speak') openSpeak();
   else if (step.type === 'done') openDone();
+}
+
+// ===== 剧情对话：逐句播放，孩子点“继续”往下走 =====
+let currentLines = [];
+let lineIndex = 0;
+const SPEAKER_NAME = { beaver: '河狸馆员', rabbit: '小兔' };
+
+function renderDialogue(step) {
+  currentLines = step.lines;
+  lineIndex = 0;
+  els.control.hidden = true;       // 任务控制条先藏起来
+  els.dialogueBar.hidden = false;
+  showTip('', '');
+  showDialogueLine();
+}
+
+function showDialogueLine() {
+  const ln = currentLines[lineIndex];
+  els.speaker.hidden = false;
+  els.speakerAvatar.className = 'avatar avatar--' + ln.speaker;
+  els.speakerName.textContent = SPEAKER_NAME[ln.speaker];
+  els.enLine.textContent = ln.en;
+  els.enLine.hidden = false;
+  els.zhLine.textContent = ln.zh;
+  els.zhLine.hidden = false;
+  // 最后一句按钮写“开始/继续”，其余写“下一句”
+  els.dialogueNext.textContent = lineIndex === currentLines.length - 1 ? '继续' : '下一句';
+  playAudio(ln.audio).then(() => {
+    if (!audioState.played) showTip('声音没出来，点「重听这句」试试。', 'bad');
+  });
+}
+
+function advanceDialogue() {
+  if (lineIndex < currentLines.length - 1) {
+    lineIndex++;
+    showDialogueLine();
+  } else {
+    els.dialogueBar.hidden = true;
+    els.zhLine.hidden = true;
+    goNext();
+  }
 }
 
 function renderCheck(step) {
@@ -151,6 +184,8 @@ function captionText(step) {
 }
 
 function renderQuiz(step) {
+  // 关系在渲染时随机定，避免提前写死
+  step.relation = Math.random() < 0.5 ? 'on' : 'next';
   const side = Math.random() < 0.5 ? 'left' : 'right';
   current.showQuiz(step.holder, side);
   record.quizTotal++;
@@ -250,6 +285,14 @@ function finishLevel() {
 }
 
 // ===== 事件绑定 =====
+els.dialogueNext.addEventListener('click', () => {
+  stopAudio();
+  advanceDialogue();
+});
+els.dialogueReplay.addEventListener('click', () => {
+  playAudio(currentLines[lineIndex].audio);
+});
+
 $('start-btn').addEventListener('click', () => {
   els.start.hidden = true;
   els.stage.hidden = false;
@@ -294,12 +337,14 @@ els.demoClose.addEventListener('click', () => {
 els.speakListen.addEventListener('click', () => playAudio('ask-checkout'));
 els.speakDone.addEventListener('click', () => {
   els.speakModal.hidden = true;
-  playThen('beaver-done', null);
-  setTimeout(openDone, 900);
+  let moved = false;
+  const move = () => { if (!moved) { moved = true; goNext(); } };
+  playThen('beaver-done', move);
+  setTimeout(move, 4000); // 兜底：音频没成功也能往下走
 });
 els.speakSkip.addEventListener('click', () => {
   els.speakModal.hidden = true;
-  openDone();
+  goNext();
 });
 
 els.doneContinue.addEventListener('click', finishLevel);

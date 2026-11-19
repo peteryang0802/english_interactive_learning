@@ -179,6 +179,20 @@ button { font-family: inherit; cursor: pointer; }
   border: 3px solid #fff;
   box-shadow: var(--shadow);
 }
+.avatar--rabbit {
+  background: radial-gradient(circle at 35% 30%, #ffffff, #dcd6cc);
+}
+.zh-line {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: #7a888e;
+}
+.dialogue-bar {
+  display: flex;
+  gap: 10px;
+  padding: 6px 14px 4px;
+}
+.dialogue-bar .ctrl { min-height: 44px; flex: 1; justify-content: center; }
 .speaker-meta { min-width: 0; }
 #speaker-name { font-weight: 700; color: var(--teal-deep); }
 .en-line {

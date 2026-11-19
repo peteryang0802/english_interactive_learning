@@ -34,11 +34,18 @@
 
     <!-- 对话行 -->
     <div class="speaker-row" id="speaker-row" hidden>
-      <div class="avatar avatar--beaver" aria-hidden="true"></div>
+      <div class="avatar avatar--beaver" id="speaker-avatar" aria-hidden="true"></div>
       <div class="speaker-meta">
         <span id="speaker-name">河狸馆员</span>
         <p class="en-line" id="en-line" hidden></p>
+        <p class="zh-line" id="zh-line" hidden></p>
       </div>
+    </div>
+
+    <!-- 对话控制条（剧情对话时用） -->
+    <div class="dialogue-bar" id="dialogue-bar" hidden>
+      <button type="button" class="ctrl ghost" id="dialogue-replay"><span class="horn" aria-hidden="true"></span>重听这句</button>
+      <button type="button" class="ctrl" id="dialogue-next">继续</button>
     </div>
 
     <!-- 控制条 -->

@@ -1,4 +1,8 @@
 import * as THREE from '../vendor/three.module.js';
+import { makeRabbit } from './characters.js';
+import {
+  makeTree, makeStreetLamp, makeBench, makeBush, makeFlower, makeFountain,
+} from './props.js';
 
 // 五个地点：id、中文名、颜色、在小镇里的位置
 const SPOTS = [
@@ -123,6 +127,44 @@ export function createTown(container, { unlocked, onEnter, onLocked }) {
   );
   plaza.position.y = 0.02;
   scene.add(plaza);
+
+  // ===== 环境与角色：喷泉、小兔、树木、路灯、长椅、花草 =====
+  const animators = [];
+  function polar(r, ang) { return { x: Math.sin(ang) * r, z: Math.cos(ang) * r }; }
+  function place(obj, r, ang, y = 0, rotY = 0) {
+    const p = polar(r, ang);
+    obj.position.set(p.x, y, p.z);
+    obj.rotation.y = rotY;
+    scene.add(obj);
+    if (obj.userData.animate) animators.push(obj.userData.animate);
+    return obj;
+  }
+
+  // 中心喷泉
+  scene.add(makeFountain());
+
+  // 小兔站在广场边，靠近图书馆一侧（angle 0 是图书馆）
+  const rabbit = place(makeRabbit(), 3.1, -0.55);
+  rabbit.rotation.y = -0.4;
+
+  // 五条小路的间隙方向（两条小路中间）
+  const gaps = [0.2 * Math.PI, 0.6 * Math.PI, Math.PI, 1.4 * Math.PI, 1.8 * Math.PI];
+  gaps.forEach((g, i) => {
+    place(makeTree(i % 2 ? 'leaf' : 'pine'), 11.6, g);
+    place(makeBush(), 10.2, g + 0.12);
+    // 路灯贴着小路一侧
+    place(makeStreetLamp(), 5.6, SPOTS[i].angle + 0.14);
+  });
+
+  // 长椅放在两栋建筑附近
+  place(makeBench(), 8.2, gaps[0], 0, gaps[0]);
+  place(makeBench(), 8.2, gaps[3], 0, gaps[3]);
+
+  // 花点缀在广场外圈
+  const flowerColors = [0xef6f9b, 0xf2c14e, 0x9b6bb0, 0xe88a3c, 0x4f93d6];
+  for (let i = 0; i < 10; i++) {
+    place(makeFlower(flowerColors[i % flowerColors.length]), 3.6 + (i % 3) * 0.5, i * 0.63);
+  }
 
   // 小路 + 建筑
   const groups = [];
@@ -316,6 +358,8 @@ export function createTown(container, { unlocked, onEnter, onLocked }) {
     }
   }
   function loop() {
+    const t = clock.getElapsedTime();
+    for (const a of animators) a(t);
     clouds.forEach((c) => {
       c.position.x += 0.008;
       if (c.position.x > 14) c.position.x = -14;
