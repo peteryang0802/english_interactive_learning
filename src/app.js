@@ -78,7 +78,7 @@ function playLine(key) {
   mediaMessage.textContent = '';
   audio.pause();
   if (currentAudio !== key) {
-    audio.src = 'audio/' + key + '.m4a';
+    audio.src = 'audio/' + key + '.m4a?v=3';
     currentAudio = key;
   } else if (audio.readyState > 0) {
     audio.currentTime = 0;
