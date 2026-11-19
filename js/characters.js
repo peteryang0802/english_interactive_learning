@@ -80,12 +80,23 @@ export function makeRabbit() {
   }
 
   let t0 = Math.random() * 6;
+  g.userData.moving = false;
   g.userData.animate = (t) => {
     const tt = t + t0;
-    g.position.y = Math.sin(tt * 2) * 0.035;
-    ears.forEach((ear) => {
-      ear.rotation.z = ear.userData.base + Math.sin(tt * 2.6) * 0.07;
-    });
+    if (g.userData.moving) {
+      // 走路：兔子一蹦一蹦，蹦得高一点、节奏快一点，耳朵跟着抖
+      const hop = Math.abs(Math.sin(tt * 7.5));
+      g.position.y = hop * 0.17;
+      ears.forEach((ear) => {
+        ear.rotation.z = ear.userData.base + Math.sin(tt * 7.5) * 0.14;
+      });
+    } else {
+      // 待机：轻轻呼吸浮动，耳朵慢慢摆
+      g.position.y = Math.sin(tt * 2) * 0.035;
+      ears.forEach((ear) => {
+        ear.rotation.z = ear.userData.base + Math.sin(tt * 2.6) * 0.07;
+      });
+    }
   };
   return g;
 }

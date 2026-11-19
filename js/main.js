@@ -55,6 +55,7 @@ function startTown() {
   els.progress.hidden = true;
   els.speaker.hidden = true;
   els.control.hidden = true;
+  els.dialogueBar.hidden = true;
   showTip('', '');
 
   current = createTown(els.wrap, {

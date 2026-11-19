@@ -130,6 +130,8 @@ export function createTown(container, { unlocked, onEnter, onLocked }) {
 
   // ===== 环境与角色：喷泉、小兔、树木、路灯、长椅、花草 =====
   const animators = [];
+  // 走过去会被挡住的硬碰撞：中心坐标 + 碰撞半径，点击地面时用来把目标点推开
+  const obstacles = [];
   function polar(r, ang) { return { x: Math.sin(ang) * r, z: Math.cos(ang) * r }; }
   function place(obj, r, ang, y = 0, rotY = 0) {
     const p = polar(r, ang);
@@ -142,6 +144,7 @@ export function createTown(container, { unlocked, onEnter, onLocked }) {
 
   // 中心喷泉
   scene.add(makeFountain());
+  obstacles.push({ x: 0, z: 0, r: 1.55 });
 
   // 小兔站在广场边，靠近图书馆一侧（angle 0 是图书馆）
   const rabbit = place(makeRabbit(), 3.1, -0.55);
@@ -151,14 +154,23 @@ export function createTown(container, { unlocked, onEnter, onLocked }) {
   const gaps = [0.2 * Math.PI, 0.6 * Math.PI, Math.PI, 1.4 * Math.PI, 1.8 * Math.PI];
   gaps.forEach((g, i) => {
     place(makeTree(i % 2 ? 'leaf' : 'pine'), 11.6, g);
+    const tp = polar(11.6, g);
+    obstacles.push({ x: tp.x, z: tp.z, r: 0.55 });
     place(makeBush(), 10.2, g + 0.12);
     // 路灯贴着小路一侧
-    place(makeStreetLamp(), 5.6, SPOTS[i].angle + 0.14);
+    const lampAng = SPOTS[i].angle + 0.14;
+    place(makeStreetLamp(), 5.6, lampAng);
+    const lp = polar(5.6, lampAng);
+    obstacles.push({ x: lp.x, z: lp.z, r: 0.35 });
   });
 
   // 长椅放在两栋建筑附近
   place(makeBench(), 8.2, gaps[0], 0, gaps[0]);
+  const b1 = polar(8.2, gaps[0]);
+  obstacles.push({ x: b1.x, z: b1.z, r: 0.95 });
   place(makeBench(), 8.2, gaps[3], 0, gaps[3]);
+  const b2 = polar(8.2, gaps[3]);
+  obstacles.push({ x: b2.x, z: b2.z, r: 0.95 });
 
   // 花点缀在广场外圈
   const flowerColors = [0xef6f9b, 0xf2c14e, 0x9b6bb0, 0xe88a3c, 0x4f93d6];
@@ -220,6 +232,7 @@ export function createTown(container, { unlocked, onEnter, onLocked }) {
     g.userData.index = idx;
     scene.add(g);
     groups.push(g);
+    obstacles.push({ x: g.position.x, z: g.position.z, r: 1.7 });
   });
 
   // 云朵
@@ -292,6 +305,59 @@ export function createTown(container, { unlocked, onEnter, onLocked }) {
   let moved = 0;
   let lastX = 0, lastY = 0;
 
+  // 点空地时，射线打在地面或广场上，拿到要走过去的坐标
+  const walkMeshes = [ground, plaza];
+  const walk = { target: null, speed: 3.6 };
+  rabbit.userData.moving = false;
+
+  // 把目标点收进可走范围：先夹在地面内，再从硬碰撞里推出来，免得穿模
+  function clampTarget(p) {
+    let d = Math.hypot(p.x, p.z);
+    const maxR = 12;
+    if (d > maxR) {
+      p.x *= maxR / d;
+      p.z *= maxR / d;
+      d = maxR;
+    }
+    for (const o of obstacles) {
+      const dx = p.x - o.x;
+      const dz = p.z - o.z;
+      let dd = Math.hypot(dx, dz);
+      if (dd < o.r) {
+        let ux, uz;
+        if (dd < 1e-4) { ux = 1; uz = 0; dd = 1e-4; }
+        else { ux = dx / dd; uz = dz / dd; }
+        p.x = o.x + ux * o.r;
+        p.z = o.z + uz * o.r;
+      }
+    }
+    return p;
+  }
+
+  // 每帧推进小兔：朝目标走、转身，到了就停下
+  function updateRabbit(dt) {
+    if (!walk.target) {
+      if (rabbit.userData.moving) { rabbit.userData.moving = false; rabbit.position.y = 0; }
+      return;
+    }
+    const dx = walk.target.x - rabbit.position.x;
+    const dz = walk.target.z - rabbit.position.z;
+    const dist = Math.hypot(dx, dz);
+    if (dist < 0.08) {
+      rabbit.position.x = walk.target.x;
+      rabbit.position.z = walk.target.z;
+      walk.target = null;
+      rabbit.userData.moving = false;
+      rabbit.position.y = 0;
+      return;
+    }
+    rabbit.userData.moving = true;
+    const step = Math.min(walk.speed * dt, dist);
+    rabbit.position.x += (dx / dist) * step;
+    rabbit.position.z += (dz / dist) * step;
+    rabbit.rotation.y = Math.atan2(dx, dz);
+  }
+
   function setPointer(e) {
     const rect = renderer.domElement.getBoundingClientRect();
     pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -330,6 +396,13 @@ export function createTown(container, { unlocked, onEnter, onLocked }) {
         if (obj.userData.open) onEnter(spot.id);
         else onLocked(spot.name);
       }
+      return;
+    }
+    // 没点中建筑：射线打地面，让小兔走过去
+    const groundHits = raycaster.intersectObjects(walkMeshes, false);
+    if (groundHits.length) {
+      const p = groundHits[0].point;
+      walk.target = clampTarget(new THREE.Vector3(p.x, 0, p.z));
     }
   }
   function onWheel(e) {
@@ -358,7 +431,10 @@ export function createTown(container, { unlocked, onEnter, onLocked }) {
     }
   }
   function loop() {
-    const t = clock.getElapsedTime();
+    // 限制单帧步长，切后台回来不会一下子冲出去
+    const dt = Math.min(clock.getDelta(), 0.05);
+    const t = clock.elapsedTime;
+    updateRabbit(dt);
     for (const a of animators) a(t);
     clouds.forEach((c) => {
       c.position.x += 0.008;
