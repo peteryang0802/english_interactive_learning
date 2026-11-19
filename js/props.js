@@ -302,3 +302,328 @@ export function makeFountain() {
   g.add(jet);
   return g;
 }
+
+// ===== 面包店物件 =====
+
+// 面包卷：椭圆小球，暖黄色
+export function makeRoll() {
+  const g = new THREE.Group();
+  const roll = part(new THREE.SphereGeometry(0.32, 16, 12), 0xe8b878, { roughness: 0.9 });
+  roll.scale.set(1.15, 0.85, 1);
+  roll.castShadow = true;
+  g.add(roll);
+  // 两道浅纹
+  for (const sx of [-0.1, 0.1]) {
+    const stripe = part(new THREE.BoxGeometry(0.05, 0.02, 0.3), 0xc9915a);
+    stripe.position.set(sx, 0.22, 0);
+    g.add(stripe);
+  }
+  g.userData.isRoll = true;
+  return g;
+}
+
+// 面包：长椭球，浅棕色
+export function makeBread() {
+  const g = new THREE.Group();
+  const loaf = part(new THREE.SphereGeometry(0.35, 16, 12), 0xd99a5e, { roughness: 0.9 });
+  loaf.scale.set(1.6, 0.8, 1);
+  g.add(loaf);
+  const slash = part(new THREE.BoxGeometry(0.3, 0.03, 0.08), 0xb07a45);
+  slash.position.y = 0.26;
+  g.add(slash);
+  return g;
+}
+
+// 纸袋：方盒，上口略收
+export function makeBag() {
+  const g = new THREE.Group();
+  const body = part(new THREE.BoxGeometry(0.6, 0.8, 0.5), 0xc9a877, { roughness: 1 });
+  body.position.y = 0.4;
+  g.add(body);
+  const rim = part(new THREE.BoxGeometry(0.62, 0.08, 0.52), 0xb08c5e);
+  rim.position.y = 0.82;
+  g.add(rim);
+  return g;
+}
+
+// 篮子：宽口圆柱，简化编织
+export function makeBasket() {
+  const g = new THREE.Group();
+  const basket = part(new THREE.CylinderGeometry(0.45, 0.35, 0.55, 16, 1, true), 0xa9743f, { roughness: 1 });
+  basket.position.y = 0.3;
+  g.add(basket);
+  const bottom = part(new THREE.CylinderGeometry(0.35, 0.35, 0.06, 16), 0x8a5a30);
+  bottom.position.y = 0.05;
+  g.add(bottom);
+  const rim = part(new THREE.TorusGeometry(0.45, 0.05, 8, 18), 0x8a5a30);
+  rim.rotation.x = Math.PI / 2;
+  rim.position.y = 0.58;
+  g.add(rim);
+  return g;
+}
+
+// 面包店柜台：木质高柜 + 玻璃面
+export function makeCounter() {
+  const g = new THREE.Group();
+  const base = part(new THREE.BoxGeometry(3.2, 1.0, 1.0), 0x9c6b3f);
+  base.position.y = 0.5;
+  g.add(base);
+  const top = part(new THREE.BoxGeometry(3.3, 0.1, 1.1), 0xbfe0e6, { roughness: 0.2, metalness: 0.3 });
+  top.position.y = 1.05;
+  g.add(top);
+  return g;
+}
+
+// 烤箱：方盒 + 深色玻璃门
+export function makeOven() {
+  const g = new THREE.Group();
+  const body = part(new THREE.BoxGeometry(1.6, 1.6, 1.2), 0x8f9aa2, { roughness: 0.6, metalness: 0.3 });
+  body.position.y = 0.8;
+  g.add(body);
+  const door = part(new THREE.BoxGeometry(1.2, 1.0, 0.08), 0x2a3540, { roughness: 0.2, metalness: 0.5 });
+  door.position.set(0, 0.8, 0.62);
+  g.add(door);
+  return g;
+}
+
+// ===== 路口物件 =====
+
+// 十字交叉道路：南北一条 + 东西一条，深灰扁平
+export function makeRoad() {
+  const g = new THREE.Group();
+  const roadMat = new THREE.MeshStandardMaterial({ color: 0x5a6068, roughness: 1 });
+  const ns = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.06, 16), roadMat);
+  ns.position.y = 0.02;
+  ns.receiveShadow = true;
+  const ew = new THREE.Mesh(new THREE.BoxGeometry(16, 0.06, 2.4), roadMat);
+  ew.position.y = 0.025;
+  ew.receiveShadow = true;
+  // 中线虚线（米白）
+  for (let i = -3; i <= 3; i++) {
+    const dash = new THREE.Mesh(
+      new THREE.BoxGeometry(0.12, 0.07, 0.8),
+      new THREE.MeshStandardMaterial({ color: 0xf2e6c4 })
+    );
+    dash.position.set(0, 0.05, i * 2);
+    g.add(dash);
+  }
+  g.add(ns, ew);
+  return g;
+}
+
+// 简单卡通房子：方墙 + 坡屋顶 + 门
+export function makeBuilding(color = 0xe88a6b) {
+  const g = new THREE.Group();
+  const body = part(new THREE.BoxGeometry(2.2, 1.8, 2.0), color);
+  body.position.y = 0.9;
+  g.add(body);
+  const roof = part(new THREE.ConeGeometry(1.8, 1.0, 4), 0x8a4a3a);
+  roof.rotation.y = Math.PI / 4;
+  roof.position.y = 2.3;
+  g.add(roof);
+  const door = part(new THREE.BoxGeometry(0.6, 0.9, 0.1), 0x6e4525);
+  door.position.set(0, 0.45, 1.02);
+  g.add(door);
+  return g;
+}
+
+// 路标：杆子 + 空白牌
+export function makeSign() {
+  const g = new THREE.Group();
+  const pole = part(new THREE.CylinderGeometry(0.06, 0.07, 1.8, 10), 0x444c55);
+  pole.position.y = 0.9;
+  g.add(pole);
+  const board = part(new THREE.BoxGeometry(1.0, 0.6, 0.08), 0xf2e6c4);
+  board.position.y = 1.7;
+  g.add(board);
+  return g;
+}
+
+// 方向小旗：中性热点，杆子 + 三角旗，不写方向文字
+export function makeFlag(color = 0x4f93d6) {
+  const g = new THREE.Group();
+  const pole = part(new THREE.CylinderGeometry(0.05, 0.06, 1.2, 8), 0x555c66);
+  pole.position.y = 0.6;
+  g.add(pole);
+  const flag = part(new THREE.ConeGeometry(0.35, 0.6, 3), color);
+  flag.rotation.z = Math.PI / 2;
+  flag.position.set(0.28, 1.1, 0);
+  g.add(flag);
+  // 热点指向三角旗（杆子太细，不好点）
+  g.userData.localHotspot = new THREE.Vector3(0.28, 1.1, 0);
+  return g;
+}
+
+// ===== 超市物件 =====
+
+// 苹果：红小球 + 小叶子
+export function makeApple() {
+  const g = new THREE.Group();
+  const apple = part(new THREE.SphereGeometry(0.28, 16, 14), 0xd9483f);
+  apple.position.y = 0.28;
+  g.add(apple);
+  const leaf = part(new THREE.SphereGeometry(0.08, 8, 8), 0x5aa86b);
+  leaf.scale.set(1.4, 0.6, 1);
+  leaf.position.set(0.1, 0.52, 0);
+  g.add(leaf);
+  const stem = part(new THREE.CylinderGeometry(0.03, 0.03, 0.12), 0x6e4525);
+  stem.position.y = 0.5;
+  g.add(stem);
+  return g;
+}
+
+// 牛奶盒：高方盒，白身蓝字
+export function makeMilk() {
+  const g = new THREE.Group();
+  const carton = part(new THREE.BoxGeometry(0.5, 0.9, 0.5), 0xf2f0e8);
+  carton.position.y = 0.45;
+  g.add(carton);
+  const label = part(new THREE.BoxGeometry(0.52, 0.3, 0.52), 0x4f93d6);
+  label.position.y = 0.4;
+  g.add(label);
+  const top = part(new THREE.BoxGeometry(0.4, 0.12, 0.4), 0x3a7bb0);
+  top.position.y = 0.95;
+  g.add(top);
+  return g;
+}
+
+// 奶酪：黄色三角块
+export function makeCheese() {
+  const g = new THREE.Group();
+  const wedge = part(new THREE.ConeGeometry(0.4, 0.35, 3), 0xf2c14e);
+  wedge.rotation.y = Math.PI / 6;
+  wedge.position.y = 0.18;
+  g.add(wedge);
+  return g;
+}
+
+// 鸡蛋：白色椭圆
+export function makeEgg() {
+  const g = new THREE.Group();
+  const egg = part(new THREE.SphereGeometry(0.25, 16, 14), 0xf7f4ee);
+  egg.scale.set(0.9, 1.2, 0.9);
+  egg.position.y = 0.3;
+  g.add(egg);
+  return g;
+}
+
+// 超市货架：金属架 + 两层隔板
+export function makeShelf() {
+  const g = new THREE.Group();
+  const METAL = 0x6b7a86;
+  for (const yy of [0.5, 1.4, 2.2]) {
+    const board = part(new THREE.BoxGeometry(2.6, 0.08, 1.0), METAL, { metalness: 0.3 });
+    board.position.y = yy;
+    g.add(board);
+  }
+  for (const sx of [-1.2, 1.2]) {
+    for (const sz of [-0.4, 0.4]) {
+      const leg = part(new THREE.CylinderGeometry(0.05, 0.05, 2.2), 0x444c55);
+      leg.position.set(sx, 1.1, sz);
+      g.add(leg);
+    }
+  }
+  return g;
+}
+
+// 冷柜：玻璃门高柜
+export function makeFreezer() {
+  const g = new THREE.Group();
+  const body = part(new THREE.BoxGeometry(1.8, 2.2, 1.0), 0xbfe0e6, { roughness: 0.2, metalness: 0.2 });
+  body.position.y = 1.1;
+  g.add(body);
+  const door = part(new THREE.BoxGeometry(1.6, 2.0, 0.08), 0xd8f0f5, {
+    roughness: 0.1, metalness: 0.3, transparent: true, opacity: 0.7,
+  });
+  door.position.set(0, 1.1, 0.52);
+  g.add(door);
+  return g;
+}
+
+// ===== 派对物件 =====
+
+// 生日蛋糕：两层奶油 + 蜡烛 + 小火苗
+export function makeCake() {
+  const g = new THREE.Group();
+  const base = part(new THREE.CylinderGeometry(0.7, 0.78, 0.5, 20), 0xf7e3c8);
+  base.position.y = 0.25;
+  g.add(base);
+  const top = part(new THREE.CylinderGeometry(0.42, 0.5, 0.32, 20), 0xfff4e6);
+  top.position.y = 0.66;
+  g.add(top);
+  // 彩色糖珠
+  const beadColors = [0xd9534f, 0x4f93d6, 0xf2c14e, 0x5aa86b, 0x9b6bb0];
+  beadColors.forEach((c, i) => {
+    const bead = part(new THREE.SphereGeometry(0.06, 8, 8), c);
+    const ang = (i / beadColors.length) * Math.PI * 2;
+    bead.position.set(Math.cos(ang) * 0.5, 0.52, Math.sin(ang) * 0.5);
+    g.add(bead);
+  });
+  // 蜡烛
+  const candle = part(new THREE.CylinderGeometry(0.04, 0.04, 0.28), 0xffffff);
+  candle.position.y = 0.96;
+  g.add(candle);
+  const flame = part(new THREE.ConeGeometry(0.07, 0.16, 10), 0xf2a13c, {
+    emissive: 0xd96f1e, emissiveIntensity: 0.6, roughness: 0.4,
+  });
+  flame.position.y = 1.18;
+  g.add(flame);
+  return g;
+}
+
+// 气球：椭球 + 细绳，带轻微上下飘动
+export function makeBalloon(color = 0xef6f5b) {
+  const g = new THREE.Group();
+  const body = part(new THREE.SphereGeometry(0.3, 16, 14), color, { roughness: 0.5 });
+  body.scale.y = 1.2;
+  body.position.y = 0.4;
+  g.add(body);
+  const knot = part(new THREE.ConeGeometry(0.06, 0.1, 8), color);
+  knot.rotation.x = Math.PI;
+  knot.position.y = 0.08;
+  g.add(knot);
+  const string = part(new THREE.CylinderGeometry(0.012, 0.012, 0.7), 0x888888);
+  string.position.y = -0.3;
+  g.add(string);
+  const baseY = g.position.y;
+  g.userData.animate = (t) => {
+    g.position.y = baseY + Math.sin(t * 1.6 + color) * 0.06;
+  };
+  return g;
+}
+
+// 礼物盒：方盒 + 十字丝带
+export function makeGift(color = 0x4f93d6) {
+  const g = new THREE.Group();
+  const box = part(new THREE.BoxGeometry(0.6, 0.6, 0.6), color);
+  box.position.y = 0.3;
+  g.add(box);
+  const ribbonMat = 0xf2c14e;
+  const rib1 = part(new THREE.BoxGeometry(0.64, 0.62, 0.1), ribbonMat);
+  rib1.position.y = 0.3;
+  g.add(rib1);
+  const rib2 = part(new THREE.BoxGeometry(0.1, 0.62, 0.64), ribbonMat);
+  rib2.position.y = 0.3;
+  g.add(rib2);
+  const bow = part(new THREE.SphereGeometry(0.1, 10, 8), ribbonMat);
+  bow.position.y = 0.66;
+  g.add(bow);
+  return g;
+}
+
+// 派对横幅：一根绳 + 一串三角旗
+export function makeBanner() {
+  const g = new THREE.Group();
+  const rope = part(new THREE.CylinderGeometry(0.02, 0.02, 6), 0x777777);
+  rope.rotation.z = Math.PI / 2;
+  g.add(rope);
+  const flagColors = [0xef6f5b, 0xf2c14e, 0x5aa86b, 0x4f93d6, 0x9b6bb0];
+  flagColors.forEach((c, i) => {
+    const flag = part(new THREE.ConeGeometry(0.18, 0.4, 3), c);
+    flag.rotation.x = Math.PI;
+    flag.position.set(-2.4 + i * 1.2, -0.25, 0);
+    g.add(flag);
+  });
+  return g;
+}
+

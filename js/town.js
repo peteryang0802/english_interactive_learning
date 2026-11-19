@@ -417,14 +417,15 @@ export function createTown(container, { unlocked, onEnter, onLocked }) {
   dom.addEventListener('pointerup', onUp);
   dom.addEventListener('wheel', onWheel, { passive: false });
 
-  // 动画循环
+  // 动画循环：前台用 rAF 流畅渲染；页面隐藏时降频 setTimeout 兜底，
+  // 省电的同时保证画面能更新，也兼容 rAF 被节流的特殊 WebView。
   let raf = 0;
   let usingTimer = false;
   const clock = new THREE.Clock();
   function schedule() {
     if (document.hidden) {
       usingTimer = true;
-      raf = setTimeout(loop, 33);
+      raf = setTimeout(loop, 200);
     } else {
       usingTimer = false;
       raf = requestAnimationFrame(loop);
@@ -444,7 +445,7 @@ export function createTown(container, { unlocked, onEnter, onLocked }) {
     renderer.render(scene, camera);
     schedule();
   }
-  loop();
+  schedule();
 
   function resize() {
     const w = container.clientWidth;
@@ -464,6 +465,13 @@ export function createTown(container, { unlocked, onEnter, onLocked }) {
       dom.removeEventListener('pointermove', onMove);
       dom.removeEventListener('pointerup', onUp);
       dom.removeEventListener('wheel', onWheel);
+      scene.traverse((m) => {
+        if (m.isMesh) {
+          m.geometry.dispose();
+          const mats = Array.isArray(m.material) ? m.material : [m.material];
+          mats.forEach((mat) => mat.dispose());
+        }
+      });
       renderer.dispose();
       labelEls.forEach((el) => { if (el.parentNode) el.parentNode.removeChild(el); });
       if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);

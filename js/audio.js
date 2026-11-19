@@ -1,25 +1,10 @@
-// 音频管理：统一播放、记录是否真正出声
-const voice = document.getElementById('voice');
+// 音频路径表：播放、预加载与状态逻辑在 audio-manager.js。
 
+// 共 87 条，按 audio-script.json 生成，key 与台词表一一对应。
 export const AUDIO = {
-  'tap-book': 'audio/tap-book.m4a',
-  'tap-cart': 'audio/tap-cart.m4a',
-  'on-cart': 'audio/on-cart.m4a',
-  'next-cart': 'audio/next-cart.m4a',
-  'tap-on-cart': 'audio/tap-on-cart.m4a',
-  'tap-next-cart': 'audio/tap-next-cart.m4a',
-  'tap-on-box': 'audio/tap-on-box.m4a',
-  'tap-next-box': 'audio/tap-next-box.m4a',
-  'ask-checkout': 'audio/ask-checkout.m4a',
-  'beaver-done': 'audio/beaver-done.m4a',
-  // 剧情对话（本轮新增）
   'd-r-hi': 'audio/d-r-hi.m4a',
   'd-b-hello': 'audio/d-b-hello.m4a',
   'd-r-party': 'audio/d-r-party.m4a',
-  'd-b-find': 'audio/d-b-find.m4a',
-  'd-b-first': 'audio/d-b-first.m4a',
-  'd-b-book': 'audio/d-b-book.m4a',
-  'd-b-cart': 'audio/d-b-cart.m4a',
   'd-b-on': 'audio/d-b-on.m4a',
   'd-b-next': 'audio/d-b-next.m4a',
   'd-b-try': 'audio/d-b-try.m4a',
@@ -30,32 +15,78 @@ export const AUDIO = {
   'd-b-didit': 'audio/d-b-didit.m4a',
   'd-r-thanks': 'audio/d-r-thanks.m4a',
   'd-b-bye': 'audio/d-b-bye.m4a',
+  'tap-book': 'audio/tap-book.m4a',
+  'tap-cart': 'audio/tap-cart.m4a',
+  'on-cart': 'audio/on-cart.m4a',
+  'next-cart': 'audio/next-cart.m4a',
+  'tap-on-cart': 'audio/tap-on-cart.m4a',
+  'tap-on-box': 'audio/tap-on-box.m4a',
+  'tap-next-cart': 'audio/tap-next-cart.m4a',
+  'tap-next-box': 'audio/tap-next-box.m4a',
+  'ask-checkout': 'audio/ask-checkout.m4a',
+  'beaver-done': 'audio/beaver-done.m4a',
+  'd-r-food': 'audio/d-r-food.m4a',
+  'd-bak-hi': 'audio/d-bak-hi.m4a',
+  'd-r-wantrolls': 'audio/d-r-wantrolls.m4a',
+  'd-bak-howmany': 'audio/d-bak-howmany.m4a',
+  'd-bak-try': 'audio/d-bak-try.m4a',
+  'd-bak-bag': 'audio/d-bak-bag.m4a',
+  'd-bak-say': 'audio/d-bak-say.m4a',
+  'd-bak-here': 'audio/d-bak-here.m4a',
+  'd-r-thanks2': 'audio/d-r-thanks2.m4a',
+  'd-bak-bye': 'audio/d-bak-bye.m4a',
+  'tap-roll': 'audio/tap-roll.m4a',
+  'tap-bread': 'audio/tap-bread.m4a',
+  'one-roll': 'audio/one-roll.m4a',
+  'two-roll': 'audio/two-roll.m4a',
+  'bag-next-basket': 'audio/bag-next-basket.m4a',
+  'say-two-rolls': 'audio/say-two-rolls.m4a',
+  'bak-done': 'audio/bak-done.m4a',
+  'd-r-excuse': 'audio/d-r-excuse.m4a',
+  'd-g-hi': 'audio/d-g-hi.m4a',
+  'd-g-left': 'audio/d-g-left.m4a',
+  'd-g-right': 'audio/d-g-right.m4a',
+  'd-g-straight': 'audio/d-g-straight.m4a',
+  'd-g-try': 'audio/d-g-try.m4a',
+  'd-g-bench': 'audio/d-g-bench.m4a',
+  'd-g-say': 'audio/d-g-say.m4a',
+  'd-g-here': 'audio/d-g-here.m4a',
+  'd-r-thanks3': 'audio/d-r-thanks3.m4a',
+  'd-g-bye': 'audio/d-g-bye.m4a',
+  'dir-left': 'audio/dir-left.m4a',
+  'dir-right': 'audio/dir-right.m4a',
+  'dir-straight': 'audio/dir-straight.m4a',
+  'map-on-bench': 'audio/map-on-bench.m4a',
+  'say-go-straight': 'audio/say-go-straight.m4a',
+  'cross-done': 'audio/cross-done.m4a',
+  'd-r-hi2': 'audio/d-r-hi2.m4a',
+  'd-c-hi': 'audio/d-c-hi.m4a',
+  'd-c-order': 'audio/d-c-order.m4a',
+  'd-c-try': 'audio/d-c-try.m4a',
+  'd-c-say': 'audio/d-c-say.m4a',
+  'd-c-here': 'audio/d-c-here.m4a',
+  'd-r-thanks4': 'audio/d-r-thanks4.m4a',
+  'd-c-bye': 'audio/d-c-bye.m4a',
+  'tap-apple': 'audio/tap-apple.m4a',
+  'tap-milk': 'audio/tap-milk.m4a',
+  'seq-apple-milk': 'audio/seq-apple-milk.m4a',
+  'seq-milk-cheese': 'audio/seq-milk-cheese.m4a',
+  'seq-egg-apple': 'audio/seq-egg-apple.m4a',
+  'seq-cheese-milk': 'audio/seq-cheese-milk.m4a',
+  'shelf-on-quiz': 'audio/shelf-on-quiz.m4a',
+  'say-first-then': 'audio/say-first-then.m4a',
+  'market-done': 'audio/market-done.m4a',
+  'd-r-hi3': 'audio/d-r-hi3.m4a',
+  'd-h-hi': 'audio/d-h-hi.m4a',
+  'd-h-tasks': 'audio/d-h-tasks.m4a',
+  'd-h-sing': 'audio/d-h-sing.m4a',
+  'd-h-here': 'audio/d-h-here.m4a',
+  'd-r-thanks5': 'audio/d-r-thanks5.m4a',
+  'd-h-bye': 'audio/d-h-bye.m4a',
+  'p-book-on': 'audio/p-book-on.m4a',
+  'p-balloons-two': 'audio/p-balloons-two.m4a',
+  'p-go-cake': 'audio/p-go-cake.m4a',
+  'p-gift-candle': 'audio/p-gift-candle.m4a',
+  'say-happy-birthday': 'audio/say-happy-birthday.m4a',
+  'party-done': 'audio/party-done.m4a',
 };
-
-// 当前题音频是否真正成功播放
-export const audioState = { played: false };
-
-export function stopAudio() {
-  voice.onended = null;
-  voice.pause();
-  voice.removeAttribute('src');
-  voice.load();
-}
-
-export function playAudio(key) {
-  audioState.played = false;
-  voice.onended = null;
-  voice.src = AUDIO[key] || key;
-  return voice.play().then(() => {
-    audioState.played = true;
-  }).catch(() => {
-    audioState.played = false;
-  });
-}
-
-// 播放后，结束时执行回调
-export function playThen(key, onEnded) {
-  return playAudio(key).then(() => {
-    if (audioState.played && onEnded) voice.onended = onEnded;
-  });
-}

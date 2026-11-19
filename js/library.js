@@ -1,14 +1,39 @@
+// 通用室内 3D 视图：负责渲染和拾取，判定与音频由引擎负责。
+// 按 levelId 切换房间主题、静态家具和角色；按 step.scene 渲染不同的候选场景。
+// 实现统一视图接口：showCheck / showQuiz / mark / prepareDemo / demoStep / onAction / resetCamera / dispose。
+
 import * as THREE from '../vendor/three.module.js';
 import { makeBeaver } from './characters.js';
 import {
   makeBookshelf, makeTable, makeChair, makeLamp, makeRug,
   makeWindow, makeClock, makePlant, makeDesk,
+  makeRoll, makeBread, makeBag, makeBasket, makeCounter, makeOven,
+  makeApple, makeMilk, makeCheese, makeEgg, makeShelf, makeFreezer,
 } from './props.js';
 
-// 3D 图书馆：只负责渲染 3D 物体和点击拾取，判定与音频由 main.js 负责
-export function createLibraryScene(container) {
+const DEFAULT_ORBIT = { theta: 0.4, phi: 1.05, radius: 8 };
+
+// 各关房间主题：背景、地板、墙
+const ROOM_THEME = {
+  library: { bg: 0xf3ead8, floor: 0xd9b98c, wall: 0xe9dcc3 },
+  bakery: { bg: 0xf7e9d3, floor: 0xe2bf95, wall: 0xf1d9b6 },
+  market: { bg: 0xeef3f0, floor: 0xcfd8c4, wall: 0xe2eae4 },
+};
+
+function disposeObject(obj) {
+  obj.traverse((m) => {
+    if (m.isMesh) {
+      m.geometry.dispose();
+      const mats = Array.isArray(m.material) ? m.material : [m.material];
+      mats.forEach((mat) => mat.dispose());
+    }
+  });
+}
+
+export function createLibraryScene(container, levelId = 'library') {
   const width = container.clientWidth;
   const height = container.clientHeight;
+  const theme = ROOM_THEME[levelId] || ROOM_THEME.library;
 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -18,38 +43,38 @@ export function createLibraryScene(container) {
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xf3ead8);
+  scene.background = new THREE.Color(theme.bg);
 
   const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
-  const orbit = { theta: 0.4, phi: 1.05, radius: 8 };
+  const orbit = { ...DEFAULT_ORBIT };
   function updateCamera() {
-    // 竖屏水平视野窄，按比例拉远，保证容器和两本书都进得来
     const fit = THREE.MathUtils.clamp(1 / camera.aspect, 1, 1.7);
     const r = orbit.radius * fit;
-    const x = r * Math.sin(orbit.phi) * Math.sin(orbit.theta);
-    const y = r * Math.cos(orbit.phi);
-    const z = r * Math.sin(orbit.phi) * Math.cos(orbit.theta);
-    camera.position.set(x, y, z);
+    camera.position.set(
+      r * Math.sin(orbit.phi) * Math.sin(orbit.theta),
+      r * Math.cos(orbit.phi),
+      r * Math.sin(orbit.phi) * Math.cos(orbit.theta)
+    );
     camera.lookAt(0, 0.8, 0);
     camera.updateMatrixWorld();
   }
   updateCamera();
 
   scene.add(new THREE.HemisphereLight(0xffffff, 0xc9b48f, 0.9));
-  const lamp = new THREE.DirectionalLight(0xfff0d6, 1.0);
-  lamp.position.set(5, 9, 4);
-  lamp.castShadow = true;
-  lamp.shadow.mapSize.set(1024, 1024);
-  lamp.shadow.camera.left = -8;
-  lamp.shadow.camera.right = 8;
-  lamp.shadow.camera.top = 8;
-  lamp.shadow.camera.bottom = -8;
-  scene.add(lamp);
+  const sun = new THREE.DirectionalLight(0xfff0d6, 1.0);
+  sun.position.set(5, 9, 4);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.camera.left = -8;
+  sun.shadow.camera.right = 8;
+  sun.shadow.camera.top = 8;
+  sun.shadow.camera.bottom = -8;
+  scene.add(sun);
 
-  // 房间：地板、后墙、两侧书架
+  // 房间
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(16, 16),
-    new THREE.MeshStandardMaterial({ color: 0xd9b98c, roughness: 1 })
+    new THREE.MeshStandardMaterial({ color: theme.floor, roughness: 1 })
   );
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
@@ -57,12 +82,12 @@ export function createLibraryScene(container) {
 
   const wall = new THREE.Mesh(
     new THREE.PlaneGeometry(16, 7),
-    new THREE.MeshStandardMaterial({ color: 0xe9dcc3, roughness: 1 })
+    new THREE.MeshStandardMaterial({ color: theme.wall, roughness: 1 })
   );
   wall.position.set(0, 3.5, -5);
   scene.add(wall);
 
-  // ===== 房间布置：书架、家具、馆员 =====
+  // 静态布置
   const animators = [];
   function addStatic(obj, x, y, z, rotY = 0) {
     obj.position.set(x, y, z);
@@ -72,36 +97,60 @@ export function createLibraryScene(container) {
     return obj;
   }
 
-  // 后墙：两侧书架、中央窗户
-  addStatic(makeBookshelf(), -3.4, 0, -4.7);
-  addStatic(makeBookshelf(), 3.4, 0, -4.7);
-  addStatic(makeWindow(), 0, 2.0, -4.95);
-  addStatic(makeClock(), 0, 4.3, -4.9);
+  function buildStaticLibrary() {
+    addStatic(makeBookshelf(), -3.4, 0, -4.7);
+    addStatic(makeBookshelf(), 3.4, 0, -4.7);
+    addStatic(makeWindow(), 0, 2.0, -4.95);
+    addStatic(makeClock(), 0, 4.3, -4.9);
+    addStatic(makePlant(), -5.6, 0, -4.5);
+    addStatic(makePlant(), 5.6, 0, -4.5);
+    addStatic(makeTable(true), -4.4, 0, -1.2);
+    addStatic(makeChair(), -4.4, 0, 0.1, Math.PI);
+    addStatic(makeChair(), -5.6, 0, -1.2, Math.PI / 2);
+    addStatic(makeLamp(), -4.0, 0.95, -1.2);
+    addStatic(makeDesk(), 4.3, 0, -1.4);
+    const beaver = addStatic(makeBeaver(), 5.5, 0, -1.4);
+    beaver.rotation.y = -0.5;
+    beaver.scale.setScalar(1.05);
+    addStatic(makeRug(), 0, 0, 0.6);
+  }
 
-  // 角落盆栽
-  addStatic(makePlant(), -5.6, 0, -4.5);
-  addStatic(makePlant(), 5.6, 0, -4.5);
+  function buildStaticBakery() {
+    addStatic(makeOven(), -4.2, 0, -4.4);
+    addStatic(makeOven(), -2.4, 0, -4.5);
+    addStatic(makeWindow(), 0, 2.0, -4.95);
+    addStatic(makePlant(), 5.6, 0, -4.5);
+    addStatic(makeCounter(), 0, 0, -1.6);
+    addStatic(makeTable(), -4.6, 0, -0.6);
+    addStatic(makeChair(), -4.6, 0, 0.7, Math.PI);
+    const baker = addStatic(makeBeaver(), 4.2, 0, -0.9);
+    baker.rotation.y = -0.5;
+    addStatic(makeRug(), 0, 0, 1.2);
+  }
 
-  // 左侧阅读区：圆桌 + 两把椅子 + 台灯
-  addStatic(makeTable(true), -4.4, 0, -1.2);
-  addStatic(makeChair(), -4.4, 0, 0.1, Math.PI);
-  addStatic(makeChair(), -5.6, 0, -1.2, Math.PI / 2);
-  addStatic(makeLamp(), -4.0, 0.95, -1.2);
+  function buildStaticMarket() {
+    addStatic(makeShelf(), -3.6, 0, -3.6);
+    addStatic(makeShelf(), 3.6, 0, -3.6);
+    addStatic(makeFreezer(), 0, 0, -4.6);
+    addStatic(makeWindow(), -5.6, 2.0, -4.9);
+    addStatic(makeWindow(), 5.6, 2.0, -4.9);
+    addStatic(makePlant(), -5.8, 0, -1.8);
+    addStatic(makePlant(), 5.8, 0, -1.8);
+    addStatic(makeCounter(), 0, 0, -1.8);
+    const clerk = addStatic(makeBeaver(), 4.6, 0, -1.0);
+    clerk.rotation.y = -0.6;
+    addStatic(makeRug(), 0, 0, 1.4);
+  }
 
-  // 右侧借书台 + 河狸馆员（站在台侧，面向孩子，全身可见）
-  addStatic(makeDesk(), 4.3, 0, -1.4);
-  const beaver = addStatic(makeBeaver(), 5.5, 0, -1.4);
-  beaver.rotation.y = -0.5;
-  beaver.scale.setScalar(1.05);
-
-  // 中心地毯（任务区下方，不挡拾取）
-  addStatic(makeRug(), 0, 0, 0.6);
+  if (levelId === 'bakery') buildStaticBakery();
+  else if (levelId === 'market') buildStaticMarket();
+  else buildStaticLibrary();
 
   // 动态物体挂载点
   const dyn = new THREE.Group();
   scene.add(dyn);
 
-  // 做一本 3D 书（两本外观完全一致）
+  // ===== 图书馆动态物件 =====
   function makeBook(pos) {
     const g = new THREE.Group();
     const cover = new THREE.Mesh(
@@ -116,11 +165,9 @@ export function createLibraryScene(container) {
     pages.position.y = -0.02;
     g.add(cover, pages);
     g.userData.pick = pos;
-    g.userData.book = true;
     return g;
   }
 
-  // 做容器（推车或盒子）
   function makeHolder(kind) {
     const g = new THREE.Group();
     if (kind === 'cart') {
@@ -131,18 +178,17 @@ export function createLibraryScene(container) {
       bed.position.y = 0.9;
       bed.castShadow = true;
       g.add(bed);
-      // 四条腿 + 轮子
       for (const sx of [-0.9, 0.9]) {
         for (const sz of [-0.5, 0.5]) {
           const leg = new THREE.Mesh(
             new THREE.CylinderGeometry(0.05, 0.05, 0.9),
-            new THREE.MeshStandardMaterial({ color: 0x444 })
+            new THREE.MeshStandardMaterial({ color: 0x444444 })
           );
           leg.position.set(sx, 0.45, sz);
           g.add(leg);
           const wheel = new THREE.Mesh(
             new THREE.CylinderGeometry(0.16, 0.16, 0.12, 16),
-            new THREE.MeshStandardMaterial({ color: 0x222 })
+            new THREE.MeshStandardMaterial({ color: 0x222222 })
           );
           wheel.rotation.z = Math.PI / 2;
           wheel.position.set(sx, 0.12, sz);
@@ -158,73 +204,287 @@ export function createLibraryScene(container) {
       box.position.y = 0.5;
       box.castShadow = true;
       g.add(box);
-      g.userData.topY = 1.08;
+      g.userData.topY = 1.09;
     }
-    g.userData.holder = kind;
     g.userData.pick = kind;
+    return g;
+  }
+
+  // ===== 面包店动态物件 =====
+  // 一个盘子（候选数量组的底座）
+  function makePlate() {
+    const plate = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.85, 0.8, 0.08, 24),
+      new THREE.MeshStandardMaterial({ color: 0xf2f0e8, roughness: 0.4 })
+    );
+    plate.position.y = 0.06;
+    plate.receiveShadow = true;
+    return plate;
+  }
+
+  // 数量候选：一个盘子上放 1 个或 2 个面包卷
+  function makeCountGroup(pick) {
+    const g = new THREE.Group();
+    g.add(makePlate());
+    if (pick === 'one') {
+      const r = makeRoll();
+      r.position.set(0, 0.32, 0);
+      g.add(r);
+    } else {
+      const r1 = makeRoll();
+      r1.position.set(-0.3, 0.32, 0);
+      const r2 = makeRoll();
+      r2.position.set(0.3, 0.32, 0);
+      g.add(r1, r2);
+    }
+    g.userData.pick = pick;
+    return g;
+  }
+
+  // 面包店袋子候选：on 在篮子上、next 在篮子旁
+  function makeBagGroup(pick) {
+    const g = new THREE.Group();
+    const basket = makeBasket();
+    g.add(basket);
+    const bag = makeBag();
+    if (pick === 'on') {
+      bag.position.set(0, 0.62, 0);
+    } else {
+      bag.position.set(1.1, 0, 0);
+    }
+    g.add(bag);
+    g.userData.pick = pick;
+    g.userData.localHotspot = bag.position.clone();
     return g;
   }
 
   let currentPickables = [];
   let pickCb = null;
+  let demoGroup = null;
+  let demoTarget = null;
+  let demoTopY = 1.08;
 
   function clear() {
     while (dyn.children.length) {
       const c = dyn.children.pop();
-      c.traverse((m) => { if (m.isMesh) { m.geometry.dispose(); } });
+      disposeObject(c);
     }
     currentPickables = [];
+    demoGroup = null;
+    demoTarget = null;
   }
 
-  // 基础确认：显示一个可点的书或推车
-  function showCheck(target) {
+  function addPickable(obj, x, z) {
+    obj.position.set(x, obj.position.y, z);
+    dyn.add(obj);
+    obj.updateMatrixWorld(true);
+    if (obj.userData.localHotspot) {
+      obj.userData.hotspot = obj.localToWorld(obj.userData.localHotspot.clone());
+    }
+    currentPickables.push(obj);
+  }
+
+  // ===== 词义确认 =====
+  function showCheck(step) {
     clear();
-    if (target === 'book') {
+    if (levelId === 'bakery') {
+      if (step.options.includes('roll')) {
+        const r = makeRoll();
+        r.userData.pick = 'roll';
+        addPickable(r, -1.8, 0);
+      }
+      if (step.options.includes('bread')) {
+        const b = makeBread();
+        b.userData.pick = 'bread';
+        addPickable(b, 1.8, 0);
+      }
+      return;
+    }
+    if (levelId === 'market') {
+      // 超市词义题：按 options 摆对应商品
+      step.options.forEach((o, i) => {
+        const factory = MARKET_FACTORY[o];
+        const obj = factory ? factory() : makeApple();
+        obj.userData.pick = o;
+        addPickable(obj, (i - (step.options.length - 1) / 2) * 2.0, 0);
+      });
+      return;
+    }
+    if (step.options.includes('book')) {
       const b = makeBook('book');
-      b.position.set(0, 0.5, 0);
-      dyn.add(b);
-      currentPickables.push(b);
-    } else {
+      addPickable(b, -1.6, 0);
+    }
+    if (step.options.includes('cart')) {
       const c = makeHolder('cart');
-      dyn.add(c);
-      currentPickables.push(c);
+      addPickable(c, 1.6, 0);
     }
   }
 
-  // 听辨题：容器 + 两本书，on 在上、next 在旁
-  function showQuiz(holder, side) {
+  // ===== 听辨题：按 scene 渲染候选 =====
+  function showQuiz(step) {
     clear();
-    const h = makeHolder(holder);
-    dyn.add(h);
-    const topY = h.userData.topY;
-
-    const onBook = makeBook('on');
-    onBook.position.set(0, topY + 0.1, 0);
-    dyn.add(onBook);
-
-    const nextBook = makeBook('next');
-    const x = side === 'left' ? -2.0 : 2.0;
-    nextBook.position.set(x, 0.12, 0);
-    dyn.add(nextBook);
-
-    currentPickables.push(onBook, nextBook);
+    if (step.scene === 'bakery-count') {
+      addPickable(makeCountGroup('one'), -2.0, 0);
+      addPickable(makeCountGroup('two'), 2.0, 0);
+    } else if (step.scene === 'bakery-bag') {
+      addPickable(makeBagGroup('on'), -1.4, 0);
+      addPickable(makeBagGroup('next'), 1.6, 0);
+    } else if (step.scene === 'market-shelf') {
+      // 货架 + 两个苹果：一个在货架上（on），一个在旁边（next）
+      const shelf = makeShelf();
+      dyn.add(shelf);
+      const onApple = makeApple();
+      onApple.userData.pick = 'on';
+      addPickable(onApple, -0.5, 0);
+      onApple.position.y = 1.5;
+      onApple.updateMatrixWorld(true);
+      const nextApple = makeApple();
+      nextApple.userData.pick = 'next';
+      addPickable(nextApple, 2.3, 0);
+    } else {
+      // 图书馆 on/next
+      const h = makeHolder(step.holder);
+      dyn.add(h);
+      const topY = h.userData.topY;
+      const onBook = makeBook('on');
+      onBook.position.set(0, topY, 0);
+      dyn.add(onBook);
+      const nextBook = makeBook('next');
+      nextBook.position.set(step.side === 'left' ? -2.0 : 2.0, 0.09, 0);
+      dyn.add(nextBook);
+      currentPickables.push(onBook, nextBook);
+    }
   }
 
-  function onPick(cb) { pickCb = cb; }
+  // 超市商品工厂表
+  const MARKET_FACTORY = {
+    apple: makeApple,
+    milk: makeMilk,
+    cheese: makeCheese,
+    egg: makeEgg,
+  };
+
+  // ===== 连续两步题：商品摆一排，按 first、then 顺序点 =====
+  function showSequence(step) {
+    clear();
+    const picks = step.picks || ['apple', 'milk', 'cheese', 'egg'];
+    const n = picks.length;
+    picks.forEach((id, i) => {
+      const factory = MARKET_FACTORY[id];
+      const obj = factory ? factory() : makeApple();
+      obj.userData.pick = id;
+      // 均匀分布在 x 轴
+      const x = (i - (n - 1) / 2) * 2.0;
+      addPickable(obj, x, 0.4);
+    });
+  }
+
+  // ===== 示范 =====
+  function prepareDemo(holder) {
+    if (demoGroup) return;
+    if (levelId === 'bakery') {
+      // 数量示范：一个盘子，书（面包卷）在 1 个和 2 个之间靠 demoStep 切换
+      const g = new THREE.Group();
+      g.add(makePlate());
+      g.position.set(0, 0, 0);
+      dyn.add(g);
+      demoGroup = g;
+      demoTarget = new THREE.Vector3();
+      return;
+    }
+    const h = makeHolder(holder);
+    dyn.add(h);
+    const demoBook = makeBook('demo');
+    demoBook.position.set(-2.4, 0.09, 0);
+    dyn.add(demoBook);
+    demoGroup = demoBook;
+    demoTarget = new THREE.Vector3();
+    demoTopY = h.userData.topY;
+  }
+
+  function demoStep(where) {
+    if (!demoGroup) return;
+    if (levelId === 'bakery') {
+      // 重建盘子上的面包卷数量：先清掉旧 roll，再按 where 放
+      const old = demoGroup.children.filter((c) => c.userData && c.userData.pick === undefined && c.geometry && c.geometry.type === 'SphereGeometry');
+      // 简化：用可见 roll 数量控制
+      demoGroup.userData.show = where;
+      renderDemoCount(where);
+      return;
+    }
+    if (where === 'on') demoTarget.set(0, demoTopY, 0);
+    else demoTarget.set(2.0, 0.09, 0);
+  }
+
+  // 数量示范：清掉盘子上的 roll，重新放 1 个或 2 个
+  function renderDemoCount(where) {
+    const rolls = demoGroup.children.filter((c) => c.userData && c.userData.isRoll);
+    rolls.forEach((r) => { disposeObject(r); demoGroup.remove(r); });
+    if (where === 'one') {
+      const r = makeRoll();
+      r.position.set(0, 0.32, 0);
+      demoGroup.add(r);
+    } else {
+      const r1 = makeRoll();
+      r1.position.set(-0.3, 0.32, 0);
+      const r2 = makeRoll();
+      r2.position.set(0.3, 0.32, 0);
+      demoGroup.add(r1, r2);
+    }
+  }
 
   function mark(pos, kind) {
     const b = currentPickables.find((p) => p.userData.pick === pos);
     if (!b) return;
+    const color = kind === 'correct' ? 0x2e7d4f : kind === 'done' ? 0x2f7d9e : 0xb03a2e;
     b.traverse((m) => {
       if (m.isMesh && m.material) {
         m.material = m.material.clone();
-        m.material.emissive = new THREE.Color(kind === 'correct' ? 0x2e7d4f : 0xb03a2e);
+        m.material.emissive = new THREE.Color(color);
         m.material.emissiveIntensity = 0.5;
       }
     });
   }
 
-  // 点击拾取
+  function onAction(cb) { pickCb = cb; }
+
+  function debugRaycast(clientX, clientY) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObjects(currentPickables, true);
+    return hits.slice(0, 4).map((h) => {
+      let o = h.object;
+      while (o && o.userData.pick === undefined) o = o.parent;
+      return { pick: o ? o.userData.pick : null, dist: Math.round(h.distance * 100) / 100 };
+    });
+  }
+
+  function debugPicks() {
+    const rect = renderer.domElement.getBoundingClientRect();
+    const box = new THREE.Box3();
+    const v = new THREE.Vector3();
+    const out = {};
+    for (const p of currentPickables) {
+      if (p.userData.hotspot) {
+        v.copy(p.userData.hotspot);
+      } else {
+        box.setFromObject(p);
+        box.getCenter(v);
+      }
+      v.project(camera);
+      const px = rect.left + (v.x * 0.5 + 0.5) * rect.width;
+      const py = rect.top + (-v.y * 0.5 + 0.5) * rect.height;
+      out[p.userData.pick] = {
+        x: Math.round((px / window.innerWidth) * 1000),
+        y: Math.round((py / window.innerHeight) * 1000),
+      };
+    }
+    return out;
+  }
+
+  // 拾取
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
   let dragging = false, moved = 0, lastX = 0, lastY = 0;
@@ -271,23 +531,27 @@ export function createLibraryScene(container) {
 
   let raf = 0;
   let usingTimer = false;
+  const clock = new THREE.Clock();
   function schedule() {
     if (document.hidden) {
       usingTimer = true;
-      raf = setTimeout(loop, 33);
+      raf = setTimeout(loop, 200);
     } else {
       usingTimer = false;
       raf = requestAnimationFrame(loop);
     }
   }
-  const clock = new THREE.Clock();
   function loop() {
     const t = clock.getElapsedTime();
     for (const a of animators) a(t);
+    if (demoGroup && demoTarget && demoGroup.userData.pick === undefined) {
+      demoGroup.position.lerp(demoTarget, 0.09);
+      if (demoGroup.position.distanceTo(demoTarget) < 0.02) demoGroup.position.copy(demoTarget);
+    }
     renderer.render(scene, camera);
     schedule();
   }
-  loop();
+  schedule();
 
   function resize() {
     const w = container.clientWidth, h = container.clientHeight;
@@ -297,11 +561,22 @@ export function createLibraryScene(container) {
     updateCamera();
   }
 
+  function resetCamera() {
+    Object.assign(orbit, DEFAULT_ORBIT);
+    updateCamera();
+  }
+
   return {
     showCheck,
     showQuiz,
-    onPick,
+    showSequence,
+    prepareDemo,
+    demoStep,
     mark,
+    onAction,
+    debugPicks,
+    debugRaycast,
+    resetCamera,
     resize,
     dispose() {
       if (usingTimer) clearTimeout(raf); else cancelAnimationFrame(raf);
@@ -309,6 +584,14 @@ export function createLibraryScene(container) {
       dom.removeEventListener('pointermove', move);
       dom.removeEventListener('pointerup', up);
       dom.removeEventListener('wheel', wheel);
+      clear();
+      scene.traverse((m) => {
+        if (m.isMesh) {
+          m.geometry.dispose();
+          const mats = Array.isArray(m.material) ? m.material : [m.material];
+          mats.forEach((mat) => mat.dispose());
+        }
+      });
       renderer.dispose();
       if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
     },
