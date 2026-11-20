@@ -3,7 +3,7 @@
 
 import { neighbor } from './route-graph.js';
 
-const BOOK_SVG = '<svg viewBox="0 0 40 32" aria-hidden="true"><rect x="4" y="3" width="32" height="26" rx="3" fill="#2f7d8c"/><rect x="7" y="6" width="26" height="20" rx="2" fill="#f7f1e2"/></svg>';
+const BOOK_SVG = '<svg viewBox="0 0 40 32" aria-hidden="true"><rect x="4" y="3" width="32" height="26" rx="3" fill="#2f7d8c"/><rect x="7" y="6" width="26" height="20" rx="2" fill="#f7f1e2"/><rect x="7" y="6" width="3" height="20" fill="#27707e"/><line x1="13" y1="11" x2="30" y2="11" stroke="#c9bfa6" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="16" x2="30" y2="16" stroke="#c9bfa6" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="21" x2="26" y2="21" stroke="#c9bfa6" stroke-width="1.5" stroke-linecap="round"/></svg>';
 const CART_SVG = '<svg viewBox="0 0 48 40" aria-hidden="true"><rect x="6" y="10" width="36" height="8" rx="2" fill="#6b7a86"/><rect x="9" y="18" width="3" height="12" fill="#444"/><rect x="36" y="18" width="3" height="12" fill="#444"/><circle cx="12" cy="33" r="5" fill="#222"/><circle cx="36" cy="33" r="5" fill="#222"/></svg>';
 const BOX_SVG = '<svg viewBox="0 0 44 40" aria-hidden="true"><rect x="6" y="8" width="32" height="28" rx="2" fill="#b07a45"/><path d="M6 8 L22 20 L38 8" stroke="#8a5a30" fill="none" stroke-width="2"/></svg>';
 
