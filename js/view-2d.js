@@ -1,6 +1,8 @@
 // 通用 2D 图卡视图：不依赖 WebGL，用 HTML 按钮 + 内联 SVG 表达候选。
 // 按 levelId 选图标和场景；接口与 3D 视图一致，由同一个引擎驱动，作为无障碍和弱设备回退。
 
+import { neighbor } from './route-graph.js';
+
 const BOOK_SVG = '<svg viewBox="0 0 40 32" aria-hidden="true"><rect x="4" y="3" width="32" height="26" rx="3" fill="#2f7d8c"/><rect x="7" y="6" width="26" height="20" rx="2" fill="#f7f1e2"/></svg>';
 const CART_SVG = '<svg viewBox="0 0 48 40" aria-hidden="true"><rect x="6" y="10" width="36" height="8" rx="2" fill="#6b7a86"/><rect x="9" y="18" width="3" height="12" fill="#444"/><rect x="36" y="18" width="3" height="12" fill="#444"/><circle cx="12" cy="33" r="5" fill="#222"/><circle cx="36" cy="33" r="5" fill="#222"/></svg>';
 const BOX_SVG = '<svg viewBox="0 0 44 40" aria-hidden="true"><rect x="6" y="8" width="32" height="28" rx="2" fill="#b07a45"/><path d="M6 8 L22 20 L38 8" stroke="#8a5a30" fill="none" stroke-width="2"/></svg>';
@@ -70,6 +72,7 @@ export function createLibrary2D(container, levelId = 'library') {
   let pickCb = null;
   let cards = [];
   let demoEl = null;
+  let currentRouteNode = '0,0';
 
   function clear() {
     root.innerHTML = '';
@@ -224,9 +227,40 @@ export function createLibrary2D(container, levelId = 'library') {
     picks.forEach((id) => makeCard(id, 'v2-seq-card'));
   }
 
+  // ===== 路线方向题：2D 里就是三个方向箭头卡片 =====
+  function showRoute() {
+    clear();
+    root.classList.add('v2-check');
+    makeCard('left', 'v2-left', ARROW_LEFT);
+    makeCard('right', 'v2-right', ARROW_RIGHT);
+    makeCard('straight', 'v2-straight', ARROW_STRAIGHT);
+  }
+  function routeSetNode(nodeId) { currentRouteNode = nodeId; }
+  function routeWalk(dir) { return neighbor(currentRouteNode, dir); }
+  function routeReturn(nodeId) { currentRouteNode = nodeId; return nodeId; }
+  // 2D 没有 3D 场景，派对点亮和清理留空，紧接着的下一句会重画
+  function routeParty() {}
+  function clearParty() {}
+  // 2D 用卡片答题，购物篮的 3D 留空，不影响计分和推进
+  function basketAdd() {}
+  function clearBasket() {}
+  // 2D 没有 3D 礼物移动，留空
+  function moveGiftToCake() {}
+
   function mark(pos, kind) {
     const btn = cards.find((b) => b.dataset.pos === pos);
     if (btn) btn.classList.add('mark-' + kind);
+  }
+
+  // 撤掉某张卡的某个标记（比如改对后撤旧红底）
+  function unmark(pos, kind) {
+    const btn = cards.find((b) => b.dataset.pos === pos);
+    if (btn) btn.classList.remove('mark-' + kind);
+  }
+
+  // 清掉所有卡片的某类标记（换预选、进下一阶段、改答时用）
+  function clearMarks(kind) {
+    cards.forEach((btn) => btn.classList.remove('mark-' + kind));
   }
 
   // ===== 示范 =====
@@ -302,8 +336,19 @@ export function createLibrary2D(container, levelId = 'library') {
     showCheck,
     showQuiz,
     showSequence,
+    showRoute,
+    routeSetNode,
+    routeWalk,
+    routeReturn,
+    routeParty,
+    clearParty,
+    basketAdd,
+    clearBasket,
+    moveGiftToCake,
     prepareDemo,
     mark,
+    unmark,
+    clearMarks,
     demoStep,
     onAction,
     resetCamera,

@@ -1,6 +1,6 @@
 // 音频路径表：播放、预加载与状态逻辑在 audio-manager.js。
 
-// 共 87 条，按 audio-script.json 生成，key 与台词表一一对应。
+// 共 91 条，按 audio-script.json 生成，key 与台词表一一对应。
 export const AUDIO = {
   'd-r-hi': 'audio/d-r-hi.m4a',
   'd-b-hello': 'audio/d-b-hello.m4a',
@@ -17,8 +17,8 @@ export const AUDIO = {
   'd-b-bye': 'audio/d-b-bye.m4a',
   'tap-book': 'audio/tap-book.m4a',
   'tap-cart': 'audio/tap-cart.m4a',
-  'on-cart': 'audio/on-cart.m4a',
-  'next-cart': 'audio/next-cart.m4a',
+  'demo-on-cart': 'audio/demo-on-cart.m4a',
+  'demo-next-cart': 'audio/demo-next-cart.m4a',
   'tap-on-cart': 'audio/tap-on-cart.m4a',
   'tap-on-box': 'audio/tap-on-box.m4a',
   'tap-next-cart': 'audio/tap-next-cart.m4a',
@@ -35,8 +35,8 @@ export const AUDIO = {
   'd-bak-here': 'audio/d-bak-here.m4a',
   'd-r-thanks2': 'audio/d-r-thanks2.m4a',
   'd-bak-bye': 'audio/d-bak-bye.m4a',
-  'tap-roll': 'audio/tap-roll.m4a',
-  'tap-bread': 'audio/tap-bread.m4a',
+  'tap-bread-roll': 'audio/tap-bread-roll.m4a',
+  'tap-loaf-bread': 'audio/tap-loaf-bread.m4a',
   'one-roll': 'audio/one-roll.m4a',
   'two-roll': 'audio/two-roll.m4a',
   'bag-next-basket': 'audio/bag-next-basket.m4a',
@@ -56,7 +56,9 @@ export const AUDIO = {
   'dir-left': 'audio/dir-left.m4a',
   'dir-right': 'audio/dir-right.m4a',
   'dir-straight': 'audio/dir-straight.m4a',
+  'dir-wrong-way': 'audio/dir-wrong-way.m4a',
   'map-on-bench': 'audio/map-on-bench.m4a',
+  'map-next-bench': 'audio/map-next-bench.m4a',
   'say-go-straight': 'audio/say-go-straight.m4a',
   'cross-done': 'audio/cross-done.m4a',
   'd-r-hi2': 'audio/d-r-hi2.m4a',
@@ -69,6 +71,8 @@ export const AUDIO = {
   'd-c-bye': 'audio/d-c-bye.m4a',
   'tap-apple': 'audio/tap-apple.m4a',
   'tap-milk': 'audio/tap-milk.m4a',
+  'tap-cheese': 'audio/tap-cheese.m4a',
+  'tap-egg': 'audio/tap-egg.m4a',
   'seq-apple-milk': 'audio/seq-apple-milk.m4a',
   'seq-milk-cheese': 'audio/seq-milk-cheese.m4a',
   'seq-egg-apple': 'audio/seq-egg-apple.m4a',

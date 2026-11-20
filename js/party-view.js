@@ -123,8 +123,8 @@ export function createPartyScene(container) {
   addStatic(makeBalloon(0x4f93d6), 4.2, -2.8);
   addStatic(makeBalloon(0xf2c14e), -4.6, 1.2);
 
-  // 礼物、椅子、树、灌木、花
-  addStatic(makeGift(0x9b6bb0), 3.4, -0.6);
+  // 礼物、椅子、树、灌木、花（礼物存成变量，sequence 答对后真移到蛋糕旁）
+  const staticGift = addStatic(makeGift(0x9b6bb0), 3.4, -0.6);
   addStatic(makeChair(), -2.6, -1.0, 0.8);
   addStatic(makeChair(), 2.6, -1.0, -0.8);
   addStatic(makeTree('broad'), -7.0, -3.2);
@@ -149,6 +149,8 @@ export function createPartyScene(container) {
   let demoGroup = null;
   let demoTarget = null;
   let lockOrbit = false;
+  let giftMoving = false;
+  const giftTarget = new THREE.Vector3();
 
   function clear() {
     while (dyn.children.length) {
@@ -275,22 +277,79 @@ export function createPartyScene(container) {
     currentPickables.push(gift, candle);
   }
 
+  // 第一步答对：把静态礼物真移到蛋糕旁边（蛋糕在 0,-2.2，礼物放它右侧）
+  function moveGiftToCake() {
+    giftTarget.set(1.2, 0, -2.2);
+    giftMoving = true;
+  }
+
+  // 只读调试：礼物实际位置、移动状态、蛋糕火苗是否点亮（孩子不会调用）
+  function debugScene() {
+    return {
+      gift: { x: staticGift.position.x, y: staticGift.position.y, z: staticGift.position.z },
+      giftMoving: giftMoving,
+      giftTarget: { x: giftTarget.x, y: giftTarget.y, z: giftTarget.z },
+      cakeFlame: staticCake.userData.flame ? staticCake.userData.flame.visible : null,
+    };
+  }
+
+  function markColor(kind) {
+    if (kind === 'correct') return 0x27ae60;   // 亮绿：答对
+    if (kind === 'done') return 0x3498db;       // 亮蓝：已完成
+    if (kind === 'preselect') return 0xe0a92e;  // 黄：首播中预选
+    return 0xe8453a;                            // 亮红：答错
+  }
+  function forEachMesh(obj, fn) {
+    obj.traverse((m) => { if (m.isMesh && m.material) fn(m); });
+  }
+  function eachMat(m, fn) {
+    const mats = Array.isArray(m.material) ? m.material : [m.material];
+    mats.forEach(fn);
+  }
+  function rememberBase(mat) {
+    if (mat.userData.__baseEmissive === undefined) {
+      mat.userData.__baseColor = mat.color ? mat.color.getHex() : 0xffffff;
+      mat.userData.__baseEmissive = mat.emissive ? mat.emissive.getHex() : 0x000000;
+      mat.userData.__baseIntensity = mat.emissiveIntensity || 0;
+    }
+  }
+  function restoreMat(mat) {
+    if (mat.userData.__baseEmissive !== undefined) {
+      if (mat.color) mat.color = new THREE.Color(mat.userData.__baseColor);
+      mat.emissive = new THREE.Color(mat.userData.__baseEmissive);
+      mat.emissiveIntensity = mat.userData.__baseIntensity;
+    }
+  }
+
   function mark(pos, kind) {
     const target = currentPickables.find((p) => p.userData.pick === pos);
     if (!target) return;
-    const color = kind === 'correct' ? 0x2e7d4f : kind === 'done' ? 0x2f7d9e : 0xb03a2e;
-    target.traverse((m) => {
-      if (m.isMesh && m.material) {
-        m.material = m.material.clone();
-        m.material.emissive = new THREE.Color(color);
-        m.material.emissiveIntensity = 0.5;
+    const hex = markColor(kind);
+    forEachMesh(target, (m) => eachMat(m, (mat) => {
+      rememberBase(mat);
+      if (mat.emissive) {
+        if (mat.color) mat.color.setHex(0x000000);
+        mat.emissive.setHex(hex);
+        mat.emissiveIntensity = kind === 'preselect' ? 0.75 : 1;
+      } else if (mat.color) {
+        mat.color.setHex(hex);
       }
-    });
+    }));
     // 点对蜡烛：交互蜡烛火苗出现，同时点亮背景蛋糕上的蜡烛（light the candle）
     if (kind === 'correct' && target.userData.flame) target.userData.flame.visible = true;
     if (kind === 'correct' && pos === 'candle' && staticCake.userData.flame) {
       staticCake.userData.flame.visible = true;
     }
+  }
+
+  function unmark(pos) {
+    const target = currentPickables.find((p) => p.userData.pick === pos);
+    if (!target) return;
+    forEachMesh(target, (m) => eachMat(m, restoreMat));
+  }
+
+  function clearMarks() {
+    currentPickables.forEach((p) => forEachMesh(p, (m) => eachMat(m, restoreMat)));
   }
 
   // 示范：保留统一接口，发光球移动
@@ -414,6 +473,13 @@ export function createPartyScene(container) {
     const t = clock.getElapsedTime();
     for (const a of animators) a(t);
     if (demoGroup && demoTarget) demoGroup.position.lerp(demoTarget, 0.08);
+    if (giftMoving) {
+      staticGift.position.lerp(giftTarget, 0.08);
+      if (staticGift.position.distanceTo(giftTarget) < 0.02) {
+        staticGift.position.copy(giftTarget);
+        giftMoving = false;
+      }
+    }
     renderer.render(scene, camera);
     schedule();
   }
@@ -436,12 +502,16 @@ export function createPartyScene(container) {
     showCheck,
     showQuiz,
     showSequence,
+    moveGiftToCake,
     prepareDemo,
     demoStep,
     mark,
+    unmark,
+    clearMarks,
     onAction,
     debugPicks,
     debugRaycast,
+    debugScene,
     resetCamera,
     resize,
     dispose() {

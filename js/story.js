@@ -22,16 +22,17 @@ export function balancedRelations(n) {
   return shuffle(arr);
 }
 
-// on / next to 的标准演示序列
+// on / next to 的标准演示序列：书移动的同时，馆员说完整句子，不把 next to 拆成单词
 const CART_DEMO = [
-  { step: 'on', audio: 'on-cart' },
-  { step: 'next', audio: 'next-cart' },
+  { step: 'on', audio: 'demo-on-cart' },
+  { step: 'next', audio: 'demo-next-cart' },
 ];
 
 function bookQuiz(holder, relation) {
   const side = Math.random() < 0.5 ? 'left' : 'right';
   return {
     type: 'quiz',
+    skill: 'place',
     holder,
     answer: relation,
     side,
@@ -60,11 +61,11 @@ export function buildLibraryRun() {
 
   // 词义确认：书和推车同时出现，凭听到的词选一个
   steps.push({
-    type: 'check', target: 'book', options: ['book', 'cart'],
+    type: 'check', skill: 'word', target: 'book', options: ['book', 'cart'],
     audio: 'tap-book', caption: 'book',
   });
   steps.push({
-    type: 'check', target: 'cart', options: ['book', 'cart'],
+    type: 'check', skill: 'word', target: 'cart', options: ['book', 'cart'],
     audio: 'tap-cart', caption: 'cart',
   });
 
@@ -115,16 +116,17 @@ export function buildLibraryRun() {
   });
   steps.push({
     type: 'speak',
+    speakTitle: '对河狸馆员说',
     sentence: 'Can I check this out, please?',
     listenKey: 'ask-checkout',
     doneKey: 'beaver-done',
   });
 
-  // 结尾告别
+  // 结尾告别：河狸把书递过来，交代还书日子，完成交接
   steps.push({
     type: 'dialogue',
     lines: [
-      line('beaver', 'You did it! The book is yours.', 'd-b-didit'),
+      line('beaver', "Here you go. It's due on Friday.", 'd-b-didit'),
       line('rabbit', 'Thank you, Beaver! See you at the party!', 'd-r-thanks'),
       line('beaver', 'Have a great party!', 'd-b-bye'),
     ],
@@ -141,7 +143,7 @@ export const LIBRARY_AUDIO_KEYS = [
   'd-b-great', 'd-b-nice', 'd-b-same',
   'd-b-ask', 'd-b-didit', 'd-r-thanks', 'd-b-bye',
   'tap-book', 'tap-cart',
-  'on-cart', 'next-cart',
+  'demo-on-cart', 'demo-next-cart',
   'tap-on-cart', 'tap-on-box', 'tap-next-cart', 'tap-next-box',
   'ask-checkout', 'beaver-done',
 ];
@@ -176,22 +178,22 @@ export function buildBakeryRun() {
     ],
   });
 
-  // 词义确认：面包卷和面包
+  // 词义确认：用完整词组，分清一个面包卷和一条面包
   steps.push({
     type: 'check', target: 'roll', options: ['roll', 'bread'],
-    audio: 'tap-roll', caption: 'roll',
+    audio: 'tap-bread-roll', caption: 'a bread roll', skill: 'word',
   });
   steps.push({
     type: 'check', target: 'bread', options: ['roll', 'bread'],
-    audio: 'tap-bread', caption: 'bread',
+    audio: 'tap-loaf-bread', caption: 'a loaf of bread', skill: 'word',
   });
 
-  // 讲解数量
+  // 小兔说明要买面包卷，面包师问买一个还是两个
   steps.push({
     type: 'dialogue',
     lines: [
-      line('rabbit', 'I want some rolls.', 'd-r-wantrolls'),
-      line('baker', 'One roll, or two rolls?', 'd-bak-howmany'),
+      line('rabbit', 'I would like a bread roll for the party.', 'd-r-wantrolls'),
+      line('baker', 'One or two? Listen for the number.', 'd-bak-howmany'),
     ],
   });
 
@@ -208,8 +210,8 @@ export function buildBakeryRun() {
     lines: [line('baker', 'Now you try. Listen for the number.', 'd-bak-try')],
   });
 
-  // 数量听辨：4 道，one/two 平衡
-  balancedCount(4).forEach((c) => steps.push(countQuiz(c)));
+  // 数量听辨：one 和 two 各一道，顺序随机，答对就真把对应数量装进袋子
+  shuffle(['one', 'two']).forEach((c) => steps.push(countQuiz(c)));
 
   // 旧知识 next to：拿放在篮子旁的纸袋
   steps.push({
@@ -252,39 +254,14 @@ export function buildBakeryRun() {
   return steps;
 }
 
-// 平衡的 one/two 序列
-function balancedCount(n) {
-  const arr = ['one', 'two'];
-  for (let i = 2; i < n; i++) arr.push(Math.random() < 0.5 ? 'one' : 'two');
-  return shuffle(arr);
-}
-
 export const BAKERY_AUDIO_KEYS = [
   'd-r-food', 'd-bak-hi', 'd-r-wantrolls', 'd-bak-howmany',
   'd-bak-try', 'd-bak-bag', 'd-bak-say', 'd-bak-here', 'd-r-thanks2', 'd-bak-bye',
-  'tap-roll', 'tap-bread', 'one-roll', 'two-roll', 'bag-next-basket',
+  'tap-bread-roll', 'tap-loaf-bread', 'one-roll', 'two-roll', 'bag-next-basket',
   'say-two-rolls', 'bak-done',
 ];
 
-// ===== 第三关：小镇路口，听辨方向 left / right / straight，复现 on / next to =====
-function directionQuiz(answer) {
-  return {
-    type: 'quiz',
-    scene: 'crossing-dir',
-    answer,
-    picks: ['left', 'right', 'straight'],
-    audio: 'dir-' + answer,
-    caption: answer === 'straight' ? 'Go straight.' : 'Turn ' + answer + '.',
-    goodTip: '方向对啦！',
-    badTip: '方向不对，再听一次。',
-    help: [
-      { step: 'left', audio: 'dir-left' },
-      { step: 'right', audio: 'dir-right' },
-      { step: 'straight', audio: 'dir-straight' },
-    ],
-  };
-}
-
+// ===== 第三关：小镇路口，两个真实路口连起来，听方向走过去 =====
 export function buildCrossingRun() {
   const steps = [];
 
@@ -297,7 +274,7 @@ export function buildCrossingRun() {
     ],
   });
 
-  // 讲解三个方向
+  // 先认识三个方向词
   steps.push({
     type: 'dialogue',
     lines: [
@@ -307,61 +284,71 @@ export function buildCrossingRun() {
     ],
   });
 
-  // 示范：发光标记依次走到三个方向
-  steps.push({
-    type: 'demo',
-    holder: 'crossing',
-    sequence: [
-      { step: 'left', audio: 'dir-left' },
-      { step: 'right', audio: 'dir-right' },
-      { step: 'straight', audio: 'dir-straight' },
-    ],
-  });
+  // 出发前先拿地图：长椅上的 on / next to 复习，关系随机
   steps.push({
     type: 'dialogue',
-    lines: [line('guide', 'Now you try. Listen for the direction.', 'd-g-try')],
+    lines: [line('guide', 'You need a map first. Listen where it is.', 'd-g-bench')],
   });
-
-  // 方向听辨：6 道，三个方向平衡
-  balancedDirections(6).forEach((d) => steps.push(directionQuiz(d)));
-
-  // 旧知识 on / next to：找长椅上的地图
-  steps.push({
-    type: 'dialogue',
-    lines: [
-      line('guide', 'You need a map. Look, the map is on the bench.', 'd-g-bench'),
-    ],
-  });
+  const benchRel = Math.random() < 0.5 ? 'on' : 'next';
   steps.push({
     type: 'quiz',
     scene: 'crossing-bench',
-    holder: 'bench',
-    answer: 'on',
+    answer: benchRel,
     picks: ['on', 'next'],
-    audio: 'map-on-bench',
-    caption: 'Tap the map on the bench.',
-    goodTip: '找到地图啦！',
-    badTip: '再听一次，注意 on。',
-    help: [{ step: 'on', audio: 'map-on-bench' }],
+    audio: benchRel === 'on' ? 'map-on-bench' : 'map-next-bench',
+    caption: benchRel === 'on'
+      ? 'Tap the map on the bench.'
+      : 'Tap the map next to the bench.',
+    goodTip: '拿到地图啦！',
+    badTip: '再听一次，注意听 on 还是 next to。',
+    help: [
+      { step: 'on', audio: 'map-on-bench' },
+      { step: 'next', audio: 'map-next-bench' },
+    ],
   });
 
-  // 开口说方向
+  // 第一段路线：在中心路口听一个方向，走对就到第二个路口
+  steps.push({
+    type: 'dialogue',
+    lines: [line('guide', 'Now follow the map. At the first crossing, listen carefully.', 'd-g-try')],
+  });
+  steps.push({
+    type: 'route',
+    stage: 'first',
+    skill: 'direction',
+    wrongAudio: 'dir-wrong-way',
+    goodTip: '对啦，走这条路！',
+    badTip: '不是这条路，回来再听一次。',
+  });
+
+  // 第二段路线：在第二个路口再听一个方向，走对就到终点、点亮派对
+  steps.push({
+    type: 'route',
+    stage: 'second',
+    skill: 'direction',
+    wrongAudio: 'dir-wrong-way',
+    goodTip: '到啦，前面就是派对！',
+    badTip: '不是这条路，回来再听一次。',
+  });
+
+  // 自愿跟读：对向导说一句方向
   steps.push({
     type: 'dialogue',
     lines: [line('guide', 'Now say it with me.', 'd-g-say')],
   });
   steps.push({
     type: 'speak',
+    speakTitle: '对河狸向导说',
     sentence: 'Go straight, please.',
     listenKey: 'say-go-straight',
     doneKey: 'cross-done',
   });
 
-  // 结尾
+  // 结尾：向导确认目的地
   steps.push({
     type: 'dialogue',
     lines: [
-      line('guide', 'Here is your map. Good luck!', 'd-g-here'),
+      line('guide', 'You made it! There is the party.', 'd-g-here'),
       line('rabbit', 'Thank you! See you at the party!', 'd-r-thanks3'),
       line('guide', 'Bye! See you there.', 'd-g-bye'),
     ],
@@ -371,22 +358,24 @@ export function buildCrossingRun() {
   return steps;
 }
 
-// 平衡的 left / right / straight 序列
-function balancedDirections(n) {
-  const base = ['left', 'right', 'straight'];
-  const arr = [];
-  for (let i = 0; i < n; i++) arr.push(base[i % 3]);
-  return shuffle(arr);
-}
-
 export const CROSSING_AUDIO_KEYS = [
   'd-r-excuse', 'd-g-hi', 'd-g-left', 'd-g-right', 'd-g-straight',
-  'd-g-try', 'd-g-bench', 'd-g-say', 'd-g-here', 'd-r-thanks3', 'd-g-bye',
-  'dir-left', 'dir-right', 'dir-straight', 'map-on-bench',
+  'd-g-bench', 'd-g-try', 'd-g-say', 'd-g-here', 'd-r-thanks3', 'd-g-bye',
+  'dir-left', 'dir-right', 'dir-straight',
+  'map-on-bench', 'map-next-bench', 'dir-wrong-way',
   'say-go-straight', 'cross-done',
 ];
 
-// ===== 第四关：超市采购，first...then... 连续两步 =====
+// ===== 第四关：超市采购，按派对清单做两步，东西真放进篮子 =====
+// 预设的购物清单：每次随机选一个，孩子靠背没用
+const MARKET_LISTS = [
+  { first: 'apple', then: 'milk' },
+  { first: 'milk', then: 'cheese' },
+  { first: 'egg', then: 'apple' },
+  { first: 'cheese', then: 'milk' },
+];
+const MARKET_ITEMS = ['apple', 'milk', 'cheese', 'egg'];
+
 export function buildMarketRun() {
   const steps = [];
 
@@ -395,60 +384,45 @@ export function buildMarketRun() {
     type: 'dialogue',
     lines: [
       line('rabbit', 'Hello!', 'd-r-hi2'),
-      line('beaver', 'Hi there! Welcome to the market.', 'd-c-hi'),
-      line('beaver', 'Today we do two things in order. First, then.', 'd-c-order'),
+      line('clerk', 'Hi there! Welcome to the market.', 'd-c-hi'),
+      line('clerk', 'Here is your party list. We take two things in order.', 'd-c-order'),
     ],
   });
 
-  // 词义确认：apple、milk
-  steps.push({
-    type: 'check',
-    target: 'apple',
-    options: ['apple', 'milk'],
-    audio: 'tap-apple',
-    caption: 'apple',
-    goodTip: '这是苹果！',
-    badTip: '再听一次，注意 apple。',
-  });
-  steps.push({
-    type: 'check',
-    target: 'milk',
-    options: ['apple', 'milk'],
-    audio: 'tap-milk',
-    caption: 'milk',
-    goodTip: '这是牛奶！',
-    badTip: '再听一次，注意 milk。',
+  // 词义确认：从 4 样里随机挑 2 样先认识
+  shuffle(MARKET_ITEMS.slice()).slice(0, 2).forEach((it) => {
+    steps.push({
+      type: 'check',
+      target: it,
+      options: MARKET_ITEMS,
+      audio: 'tap-' + it,
+      caption: it,
+      skill: 'word',
+    });
   });
 
-  // 引导
+  // 这次的清单和引导
+  const shop = MARKET_LISTS[Math.floor(Math.random() * MARKET_LISTS.length)];
   steps.push({
     type: 'dialogue',
     lines: [
-      line('beaver', "Let's try. Listen for first and then.", 'd-c-try'),
+      line('clerk', "Listen for first and then, and put them in the basket.", 'd-c-try'),
     ],
   });
 
-  // 连续两步题
-  const seqList = [
-    { first: 'apple', then: 'milk' },
-    { first: 'milk', then: 'cheese' },
-    { first: 'egg', then: 'apple' },
-    { first: 'cheese', then: 'milk' },
-  ];
-  seqList.forEach((s) => {
-    const id = 'seq-' + s.first + '-' + s.then;
-    steps.push({
-      type: 'sequence',
-      first: s.first,
-      then: s.then,
-      picks: ['apple', 'milk', 'cheese', 'egg'],
-      audio: id,
-      caption: 'First, take the ' + s.first + '. Then, take the ' + s.then + '.',
-      firstPrompt: '先点第一个，听 first。',
-      thenPrompt: '第一个对啦，再点第二个，听 then。',
-      goodTip: '两步都对啦！',
-      badTip: '这个不对，再听一次。',
-    });
+  // 两步采购：4 样都在台面上，位置随机打乱，选对一样就真放进篮子
+  steps.push({
+    type: 'sequence',
+    scene: 'market-shop',
+    first: shop.first,
+    then: shop.then,
+    picks: shuffle(MARKET_ITEMS.slice()),
+    audio: 'seq-' + shop.first + '-' + shop.then,
+    caption: 'First, take the ' + shop.first + '. Then, take the ' + shop.then + '.',
+    firstPrompt: '先听，点清单上的第一个。',
+    thenPrompt: '第一个进篮子啦，再点第二个。',
+    goodTip: '两样都进篮子啦！',
+    badTip: '这个不对，再听一次。',
   });
 
   // 旧知识复现：方位 on / next，商品在货架上
@@ -469,23 +443,24 @@ export function buildMarketRun() {
   steps.push({
     type: 'dialogue',
     lines: [
-      line('beaver', 'Now say it with me.', 'd-c-say'),
+      line('clerk', 'Now say it with me.', 'd-c-say'),
     ],
   });
   steps.push({
     type: 'speak',
+    speakTitle: '对河狸店员说',
     sentence: 'First, take the apples, please.',
     listenKey: 'say-first-then',
     doneKey: 'market-done',
   });
 
-  // 结尾
+  // 结尾：店员确认篮子里的东西
   steps.push({
     type: 'dialogue',
     lines: [
-      line('beaver', 'Here you are. Great job!', 'd-c-here'),
+      line('clerk', 'Here are your things. Great job!', 'd-c-here'),
       line('rabbit', 'Thank you! See you at the party!', 'd-r-thanks4'),
-      line('beaver', 'Bye! See you there.', 'd-c-bye'),
+      line('clerk', 'Bye! See you there.', 'd-c-bye'),
     ],
   });
 
@@ -495,22 +470,23 @@ export function buildMarketRun() {
 
 export const MARKET_AUDIO_KEYS = [
   'd-r-hi2', 'd-c-hi', 'd-c-order', 'd-c-try', 'd-c-say', 'd-c-here',
-  'd-r-thanks4', 'd-c-bye', 'tap-apple', 'tap-milk',
+  'd-r-thanks4', 'd-c-bye',
+  'tap-apple', 'tap-milk', 'tap-cheese', 'tap-egg',
   'seq-apple-milk', 'seq-milk-cheese', 'seq-egg-apple', 'seq-cheese-milk',
   'shelf-on-quiz', 'say-first-then', 'market-done',
 ];
 
-// ===== 第五关：生日派对（综合关，把前面的话用出来） =====
+// ===== 第五关：生日派对（河狸过生日，把前面的话用出来） =====
 export function buildPartyRun() {
   const steps = [];
 
-  // 开场
+  // 开场：先交代今天是河狸的生日
   steps.push({
     type: 'dialogue',
     lines: [
-      line('rabbit', 'Hello! We are here for the party.', 'd-r-hi3'),
-      line('beaver', 'Welcome! A few little jobs first.', 'd-h-hi'),
-      line('beaver', 'Listen carefully, just like before.', 'd-h-tasks'),
+      line('rabbit', 'Hello! Happy birthday, Beaver!', 'd-r-hi3'),
+      line('host', 'Welcome! Today is my birthday. Thank you for coming.', 'd-h-hi'),
+      line('host', 'A few little jobs first. Listen carefully.', 'd-h-tasks'),
     ],
   });
 
@@ -554,7 +530,7 @@ export function buildPartyRun() {
     help: [{ step: 'straight', audio: 'p-go-cake' }],
   });
 
-  // 4. 顺序：先放礼物，再点蜡烛
+  // 4. 顺序：先把礼物放到蛋糕旁，再点蜡烛；礼物会真移过去
   steps.push({
     type: 'sequence',
     scene: 'party-candle',
@@ -562,34 +538,35 @@ export function buildPartyRun() {
     then: 'candle',
     picks: ['gift', 'candle'],
     audio: 'p-gift-candle',
-    caption: 'First, put the gift. Then, light the candle.',
-    firstPrompt: '先点第一个，听 first。',
-    thenPrompt: '第一个对啦，再点第二个，听 then。',
-    goodTip: '两步都对啦！',
+    caption: 'First, put the present next to the cake. Then, light the candle.',
+    firstPrompt: '先听，点礼物，把它放到蛋糕旁。',
+    thenPrompt: '礼物放好啦，再点蜡烛。',
+    goodTip: '礼物和蜡烛都好啦！',
     badTip: '这个不对，再听一次。',
   });
 
-  // 开口：生日祝福
+  // 开口：对河狸说生日祝福
   steps.push({
     type: 'dialogue',
     lines: [
-      line('beaver', 'Now let us sing together.', 'd-h-sing'),
+      line('host', 'Now let us sing together.', 'd-h-sing'),
     ],
   });
   steps.push({
     type: 'speak',
-    sentence: 'Happy birthday!',
+    speakTitle: '对河狸寿星说',
+    sentence: 'Happy birthday, Beaver!',
     listenKey: 'say-happy-birthday',
     doneKey: 'party-done',
   });
 
-  // 结尾
+  // 结尾：祝河狸生日快乐
   steps.push({
     type: 'dialogue',
     lines: [
-      line('beaver', 'What a great party! Thank you.', 'd-h-here'),
-      line('rabbit', 'Thank you! Happy birthday everyone!', 'd-r-thanks5'),
-      line('beaver', 'Bye bye!', 'd-h-bye'),
+      line('host', 'What a great birthday! Thank you.', 'd-h-here'),
+      line('rabbit', 'Happy birthday, Beaver! See you soon!', 'd-r-thanks5'),
+      line('host', 'Bye bye!', 'd-h-bye'),
     ],
   });
 

@@ -12,6 +12,7 @@ const DEFAULT_SAVE = {
   items: [],          // 已获得道具，按唯一 ID 去重
   lastResult: null,   // 最近一次学习结果（家长报告用）
   levels: {},         // levelId -> { done:boolean, result:summary }
+  progress: {},       // levelId -> 未完成时停在的题号（stepIndex）
 };
 
 let memoryFallback = { ...DEFAULT_SAVE, levels: {} };
@@ -20,6 +21,7 @@ let memoryFallback = { ...DEFAULT_SAVE, levels: {} };
 function migrate(raw) {
   const base = { ...DEFAULT_SAVE, ...raw };
   base.levels = raw.levels || {};
+  base.progress = raw.progress || {};
   if (!raw.levels) {
     for (let i = 0; i < base.unlocked - 1 && i < LEVEL_IDS.length; i++) {
       const id = LEVEL_IDS[i];
@@ -60,11 +62,26 @@ export function addItem(data, itemId) {
 export function markLevelDone(data, levelId, result) {
   const idx = LEVEL_IDS.indexOf(levelId);
   if (!data.levels) data.levels = {};
+  if (!data.progress) data.progress = {};
   data.levels[levelId] = { done: true, result: result || null };
+  delete data.progress[levelId];   // 完成了，不再保留中途题号
   data.lastResult = result || data.lastResult;
   if (idx >= 0) data.unlocked = Math.max(data.unlocked, Math.min(idx + 2, LEVEL_IDS.length));
   writeSave(data);
   return data;
+}
+
+// 保存某关中途停在的题号（刷新、退出后能从这道题继续）
+export function saveProgress(data, levelId, stepIndex) {
+  if (!data.progress) data.progress = {};
+  data.progress[levelId] = stepIndex;
+  writeSave(data);
+  return data;
+}
+
+export function getProgress(data, levelId) {
+  if (!data.progress || data.progress[levelId] == null) return 0;
+  return data.progress[levelId];
 }
 
 export function isLevelDone(data, levelId) {

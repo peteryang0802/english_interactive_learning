@@ -1,5 +1,7 @@
 // 音频管理器：预加载为 blob、请求令牌、状态绑定具体音频、失败可重试。
 // 同一时刻只播一条，配合 UI 显示 加载中 / 播放中 / 再听一次 / 出错重试。
+// 首播跟踪：firstPlayEnded 表示当前这条音频是否自然完整播完一次，
+// 引擎据此判断能不能把作答记成“完整首播后答对”。
 
 import { AUDIO } from './audio.js';
 
@@ -9,7 +11,12 @@ let reqToken = 0;
 let currentKey = null;
 
 // status: idle | loading | playing | ended | error
-export const audioState = { key: null, status: 'idle', played: false };
+export const audioState = {
+  key: null,
+  status: 'idle',
+  played: false,          // 已经真正开始播放（play promise resolve）
+  firstPlayEnded: false,  // 当前 key 自然播完过一次（ended 事件）
+};
 const listeners = new Set();
 
 function emit() { listeners.forEach((fn) => fn(audioState)); }
@@ -24,6 +31,7 @@ export function initAudio(audioEl) {
     // 短音频可能在状态切到 playing 前就播完，这里只认 token 和 key，不卡 status
     if (reqToken && audioState.key === currentKey) {
       audioState.played = true;
+      audioState.firstPlayEnded = true;
       audioState.status = 'ended';
       emit();
     }
@@ -73,6 +81,7 @@ export function play(key) {
   currentKey = key;
   audioState.key = key;
   audioState.played = false;
+  audioState.firstPlayEnded = false;
   el.onended = null;
 
   el.src = blobUrls.get(key) || AUDIO[key] || key;
@@ -83,6 +92,7 @@ export function play(key) {
     audioState.played = true;
     // 双保险：promise resolve 时音频可能已经播完、ended 事件已错过
     if (el.ended) {
+      audioState.firstPlayEnded = true;
       audioState.status = 'ended';
       emit();
     } else {
@@ -102,10 +112,11 @@ export function stop() {
     el.onended = null;
     el.pause();
     el.removeAttribute('src');
-    el.load();
+    el.load();   // 强制中止还在进行的下载，避免离开后旧音频接着响
   }
   currentKey = null;
   audioState.played = false;
+  audioState.firstPlayEnded = false;
   audioState.status = 'idle';
   emit();
 }

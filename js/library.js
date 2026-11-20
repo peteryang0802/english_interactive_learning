@@ -299,6 +299,14 @@ export function createLibraryScene(container, levelId = 'library') {
   let demoTopY = 1.0;
   let demoMovable = false;
 
+  // 装袋结果图层：挂在 scene 下，不随 clear 清，孩子能看到装好的袋子一直留着
+  const packLayer = new THREE.Group();
+  scene.add(packLayer);
+
+  // 超市购物篮图层：篮子和买进来的东西一直留着，不随 clear 清
+  const basketLayer = new THREE.Group();
+  scene.add(basketLayer);
+
   function clear() {
     while (dyn.children.length) {
       const c = dyn.children.pop();
@@ -308,6 +316,55 @@ export function createLibraryScene(container, levelId = 'library') {
     demoGroup = null;
     demoTarget = null;
     demoMovable = false;
+  }
+
+  // 清空装袋图层
+  function clearPack() {
+    while (packLayer.children.length) {
+      const c = packLayer.children.pop();
+      disposeObject(c);
+    }
+  }
+
+  // 按听到的数量，把对应个数的面包卷真的装进纸袋，放在台面右侧
+  function packRoll(count) {
+    clearPack();
+    const g = new THREE.Group();
+    g.add(makeBag());
+    const rolls = count === 1 ? 1 : 2;
+    for (let i = 0; i < rolls; i++) {
+      const r = makeRoll();
+      r.scale.setScalar(0.82);
+      if (rolls === 1) r.position.set(0, 0.72, 0);
+      else r.position.set(i === 0 ? -0.2 : 0.2, 0.72, 0);
+      g.add(r);
+    }
+    g.position.set(2.7, 0, 0.6);
+    packLayer.add(g);
+  }
+
+  // 清空购物篮
+  function clearBasket() {
+    while (basketLayer.children.length) {
+      const c = basketLayer.children.pop();
+      disposeObject(c);
+    }
+  }
+
+  // 第一次放：先摆一个空篮子；之后每选对一样，在篮子里放一个缩小的商品
+  function basketAdd(itemId) {
+    if (!basketLayer.children.length) {
+      const basket = makeBasket();
+      basket.position.set(2.7, 0, 0.7);
+      basketLayer.add(basket);
+    }
+    const factory = MARKET_FACTORY[itemId];
+    const obj = factory ? factory() : makeApple();
+    obj.scale.setScalar(0.5);
+    // 已放进篮子的商品个数，决定在篮筐里的位置
+    const idx = basketLayer.children.length - 1;
+    obj.position.set(idx === 0 ? -0.18 : 0.18, 0.55, 0);
+    basketLayer.add(obj);
   }
 
   function addPickable(obj, x, z) {
@@ -470,17 +527,67 @@ export function createLibraryScene(container, levelId = 'library') {
     }
   }
 
+  function markColor(kind) {
+    if (kind === 'correct') return 0x27ae60;   // 亮绿：答对
+    if (kind === 'done') return 0x3498db;       // 亮蓝：已完成
+    if (kind === 'preselect') return 0xe0a92e;  // 黄：首播中预选，还没确认
+    return 0xe8453a;                            // 亮红：答错
+  }
+
+  function forEachMesh(obj, fn) {
+    obj.traverse((m) => { if (m.isMesh && m.material) fn(m); });
+  }
+
+  function eachMat(m, fn) {
+    const mats = Array.isArray(m.material) ? m.material : [m.material];
+    mats.forEach(fn);
+  }
+
+  // 记下材质原本的底色、发光颜色和强度，方便撤标记时恢复
+  function rememberBase(mat) {
+    if (mat.userData.__baseEmissive === undefined) {
+      mat.userData.__baseColor = mat.color ? mat.color.getHex() : 0xffffff;
+      mat.userData.__baseEmissive = mat.emissive ? mat.emissive.getHex() : 0x000000;
+      mat.userData.__baseIntensity = mat.emissiveIntensity || 0;
+    }
+  }
+
+  function restoreMat(mat) {
+    if (mat.userData.__baseEmissive !== undefined) {
+      if (mat.color) mat.color = new THREE.Color(mat.userData.__baseColor);
+      mat.emissive = new THREE.Color(mat.userData.__baseEmissive);
+      mat.emissiveIntensity = mat.userData.__baseIntensity;
+    }
+  }
+
   function mark(pos, kind) {
     const b = currentPickables.find((p) => p.userData.pick === pos);
     if (!b) return;
-    const color = kind === 'correct' ? 0x2e7d4f : kind === 'done' ? 0x2f7d9e : 0xb03a2e;
-    b.traverse((m) => {
-      if (m.isMesh && m.material) {
-        m.material = m.material.clone();
-        m.material.emissive = new THREE.Color(color);
-        m.material.emissiveIntensity = 0.5;
+    const hex = markColor(kind);
+    forEachMesh(b, (m) => eachMat(m, (mat) => {
+      rememberBase(mat);
+      if (mat.emissive) {
+        // 标准材质：压黑底 + 强发光，ACES 下反馈才清晰
+        if (mat.color) mat.color.setHex(0x000000);
+        mat.emissive.setHex(hex);
+        mat.emissiveIntensity = kind === 'preselect' ? 0.75 : 1;
+      } else if (mat.color) {
+        // 没有发光通道的材质（如 Basic）：直接覆盖颜色
+        mat.color.setHex(hex);
       }
-    });
+    }));
+  }
+
+  // 撤掉某候选的标记，恢复原样
+  function unmark(pos) {
+    const b = currentPickables.find((p) => p.userData.pick === pos);
+    if (!b) return;
+    forEachMesh(b, (m) => eachMat(m, restoreMat));
+  }
+
+  // 清掉所有候选的标记
+  function clearMarks() {
+    currentPickables.forEach((p) => forEachMesh(p, (m) => eachMat(m, restoreMat)));
   }
 
   function onAction(cb) { pickCb = cb; }
@@ -630,6 +737,11 @@ export function createLibraryScene(container, levelId = 'library') {
     prepareDemo,
     demoStep,
     mark,
+    unmark,
+    clearMarks,
+    packRoll,
+    basketAdd,
+    clearBasket,
     onAction,
     debugPicks,
     debugRaycast,
@@ -642,6 +754,8 @@ export function createLibraryScene(container, levelId = 'library') {
       dom.removeEventListener('pointerup', up);
       dom.removeEventListener('wheel', wheel);
       clear();
+      clearPack();
+      clearBasket();
       scene.traverse((m) => {
         if (m.isMesh) {
           m.geometry.dispose();
