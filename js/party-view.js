@@ -3,6 +3,7 @@
 // showCheck / showQuiz / showSequence / mark / prepareDemo / demoStep / onAction / resetCamera / resize / dispose。
 
 import * as THREE from '../vendor/three.module.js';
+import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 import { makeRabbit, makeBeaver } from './characters.js';
 import {
   makeTable, makeChair, makeTree, makeBush, makeFlower, makeFlag,
@@ -17,7 +18,8 @@ const DIR_POS = {
   right: new THREE.Vector3(3.6, 0, 0),
   straight: new THREE.Vector3(0, 0, -3.6),
 };
-const FLAG_COLOR = { left: 0x4f93d6, right: 0xef6f5b, straight: 0xf2c14e };
+// 三面旗统一中性色，只靠位置（left/right/straight）区分，不让颜色变成答题线索
+const FLAG_COLOR = { left: 0xe07a3f, right: 0xe07a3f, straight: 0xe07a3f };
 
 function disposeObject(obj) {
   obj.traverse((m) => {
@@ -48,10 +50,17 @@ export function createPartyScene(container) {
   renderer.setSize(width, height);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0xf6d9d2); // 傍晚暖粉天空
+
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const envMap = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+  scene.environment = envMap;
+  pmrem.dispose();
 
   const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
   const orbit = { ...DEFAULT_ORBIT };
@@ -68,8 +77,8 @@ export function createPartyScene(container) {
   }
   updateCamera();
 
-  scene.add(new THREE.HemisphereLight(0xfff2e8, 0x8fae7a, 0.95));
-  const sun = new THREE.DirectionalLight(0xfff0da, 1.05);
+  scene.add(new THREE.HemisphereLight(0xfff2e8, 0x6a8a55, 0.55));
+  const sun = new THREE.DirectionalLight(0xfff0da, 1.5);
   sun.position.set(6, 10, 5);
   sun.castShadow = true;
   sun.shadow.mapSize.set(1024, 1024);
@@ -105,9 +114,9 @@ export function createPartyScene(container) {
 
   // 长桌（放蛋糕）在中间偏后
   addStatic(makeTable(true), 0, -2.2);
-  const cake = makeCake();
-  cake.position.set(0, 1.02, -2.2);
-  scene.add(cake);
+  const staticCake = makeCake();
+  staticCake.position.set(0, 1.02, -2.2);
+  scene.add(staticCake);
 
   // 气球点缀
   addStatic(makeBalloon(0xef6f5b), -4.2, -2.8);
@@ -139,6 +148,7 @@ export function createPartyScene(container) {
   let pickCb = null;
   let demoGroup = null;
   let demoTarget = null;
+  let lockOrbit = false;
 
   function clear() {
     while (dyn.children.length) {
@@ -148,6 +158,7 @@ export function createPartyScene(container) {
     currentPickables = [];
     demoGroup = null;
     demoTarget = null;
+    lockOrbit = false;
   }
 
   // 简单书候选
@@ -162,7 +173,7 @@ export function createPartyScene(container) {
     return g;
   }
 
-  // 独立蜡烛候选（圆柱 + 火苗）
+  // 独立蜡烛候选（圆柱 + 火苗，火苗初始隐藏，点对 candle 才点燃）
   function makeCandlePick(pos) {
     const g = new THREE.Group();
     const stick = part(new THREE.CylinderGeometry(0.05, 0.05, 0.5), 0xffffff);
@@ -172,9 +183,11 @@ export function createPartyScene(container) {
       emissive: 0xd96f1e, emissiveIntensity: 0.6, roughness: 0.4,
     });
     flame.position.y = 0.6;
+    flame.visible = false;
     g.add(flame);
+    g.userData.flame = flame;
     g.userData.pick = pos;
-    g.userData.localHotspot = new THREE.Vector3(0, 0.55, 0);
+    g.userData.localHotspot = new THREE.Vector3(0, 0.4, 0);
     return g;
   }
 
@@ -239,6 +252,9 @@ export function createPartyScene(container) {
         }
         currentPickables.push(f);
       });
+      // 方向题固定视角：自动回正，答题期间不允许自由旋转
+      lockOrbit = true;
+      resetCamera();
     }
   }
 
@@ -270,6 +286,11 @@ export function createPartyScene(container) {
         m.material.emissiveIntensity = 0.5;
       }
     });
+    // 点对蜡烛：交互蜡烛火苗出现，同时点亮背景蛋糕上的蜡烛（light the candle）
+    if (kind === 'correct' && target.userData.flame) target.userData.flame.visible = true;
+    if (kind === 'correct' && pos === 'candle' && staticCake.userData.flame) {
+      staticCake.userData.flame.visible = true;
+    }
   }
 
   // 示范：保留统一接口，发光球移动
@@ -345,6 +366,7 @@ export function createPartyScene(container) {
   function down(e) { dragging = true; moved = 0; lastX = e.clientX; lastY = e.clientY; }
   function move(e) {
     if (!dragging) return;
+    if (lockOrbit) return;
     const dx = e.clientX - lastX, dy = e.clientY - lastY;
     moved += Math.abs(dx) + Math.abs(dy);
     lastX = e.clientX; lastY = e.clientY;

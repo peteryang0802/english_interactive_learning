@@ -1,8 +1,3 @@
-import { createTown } from './town.js';
-import { createLibraryScene } from './library.js';
-import { createCrossingScene } from './crossing-view.js';
-import { createPartyScene } from './party-view.js';
-import { createLibrary2D } from './view-2d.js';
 import { createEngine } from './engine.js';
 import {
   buildLibraryRun, LIBRARY_AUDIO_KEYS,
@@ -14,6 +9,7 @@ import {
 import { LEVELS, getLevel } from './levels.js';
 import * as audio from './audio-manager.js';
 import { loadSave, writeSave, addItem, markLevelDone } from './storage.js';
+import { createLevelView, createTownView, disable3D } from './view-loader.js';
 
 window.__audio = audio;
 
@@ -84,7 +80,7 @@ function renderTownMenu(kind) {
 }
 
 // ===== 小镇地图 =====
-function startTown() {
+async function startTown() {
   currentLevelId = null;
   els.hudTitle.textContent = '动物小镇';
   els.back.hidden = true;
@@ -96,21 +92,20 @@ function startTown() {
   els.doneModal.hidden = true;
   setTip('', '');
 
-  if (use3D) {
-    try {
-      current = createTown(els.wrap, {
-        unlocked: save.unlocked,
-        onEnter: enterLevel,
-        onLocked: (name) => setTip('「' + name + '」还没解锁，先通过前面的关卡吧。', 'bad'),
-      });
-      renderTownMenu('3d');
-      return;
-    } catch {
-      use3D = false;
-      current = null;
-    }
+  const { view, is3D } = await createTownView(els.wrap, {
+    unlocked: save.unlocked,
+    onEnter: enterLevel,
+    onLocked: (name) => setTip('「' + name + '」还没解锁，先通过前面的关卡吧。', 'bad'),
+  }, use3D);
+
+  if (is3D && view) {
+    current = view;
+    renderTownMenu('3d');
+  } else {
+    use3D = false;
+    current = null;
+    renderTownMenu('2d');
   }
-  renderTownMenu('2d');
 }
 
 function teardownTown() {
@@ -141,27 +136,18 @@ async function enterLevel(id) {
   els.speaker.hidden = false;
 
   els.loading.hidden = false;
-  if (use3D) {
-    try {
-      activeView = id === 'crossing'
-        ? createCrossingScene(els.wrap)
-        : id === 'party'
-          ? createPartyScene(els.wrap)
-          : createLibraryScene(els.wrap, id);
-    } catch {
-      use3D = false;
-      activeView = createLibrary2D(els.wrap, id);
-    }
-  } else {
-    activeView = createLibrary2D(els.wrap, id);
-  }
+  // 音频后台并发预加载，不阻塞进关卡；播放时若还没好，就走即时拉取（有 loading 提示）
+  audio.preload(builder.audioKeys);
+  const { view, is3D } = await createLevelView(els.wrap, id, use3D);
+  activeView = view;
+  if (!is3D) use3D = false;
 
-  await audio.preload(builder.audioKeys);
   els.loading.hidden = true;
 
   engine = createEngine({
     els, view: activeView,
-    onFinish: finishLevel,
+    onPersist: persistLevel,
+    onFinish: returnToTown,
     config: { skillLabel: level.skillLabel, levelId: id, doneTitle: level.doneTitle },
   });
   window.__engine = engine;
@@ -169,12 +155,16 @@ async function enterLevel(id) {
   engine.start(builder.build());
 }
 
-// ===== 通关：发该关奖励道具、标记完成、解锁下一关 =====
-function finishLevel(summary) {
+// ===== 结算前保存：发奖励、标记完成、解锁，一次性写入（在结果页显示之前）=====
+function persistLevel(summary) {
   const level = getLevel(currentLevelId);
   if (level) addItem(save, level.reward.id);
   markLevelDone(save, currentLevelId, summary);
   els.bagCount.textContent = save.items.length;
+}
+
+// ===== 返回小镇：只做清理和导航，不再负责保存 =====
+function returnToTown() {
   teardownLevel();
   startTown();
 }

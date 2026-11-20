@@ -23,6 +23,15 @@ const EGG_SVG = '<svg viewBox="0 0 36 40" aria-hidden="true"><ellipse cx="18" cy
 const GIFT_SVG = '<svg viewBox="0 0 40 40" aria-hidden="true"><rect x="8" y="14" width="24" height="22" fill="#4f93d6"/><rect x="8" y="14" width="5" height="22" fill="#f2c14e"/><rect x="18" y="14" width="5" height="22" fill="#f2c14e"/></svg>';
 const CANDLE_SVG = '<svg viewBox="0 0 36 44" aria-hidden="true"><rect x="15" y="14" width="6" height="26" fill="#ffffff"/><path d="M18 4 L22 12 L14 12 Z" fill="#f2a13c"/></svg>';
 
+// 桌子（方桌，桌面 + 四条腿）
+const TABLE_SVG = '<svg viewBox="0 0 56 48" aria-hidden="true"><rect x="6" y="14" width="44" height="7" rx="2" fill="#9c6b3f"/><rect x="10" y="21" width="4" height="20" fill="#6e4525"/><rect x="42" y="21" width="4" height="20" fill="#6e4525"/><rect x="18" y="21" width="4" height="16" fill="#7a5030"/><rect x="34" y="21" width="4" height="16" fill="#7a5030"/></svg>';
+// 长椅（座面 + 靠背）
+const BENCH_SVG = '<svg viewBox="0 0 56 44" aria-hidden="true"><rect x="8" y="18" width="40" height="7" rx="2" fill="#8a5a34"/><rect x="10" y="25" width="4" height="16" fill="#444"/><rect x="42" y="25" width="4" height="16" fill="#444"/><rect x="10" y="8" width="40" height="6" rx="2" fill="#8a5a34"/><rect x="12" y="14" width="3" height="8" fill="#7a482c"/><rect x="41" y="14" width="3" height="8" fill="#7a482c"/></svg>';
+// 小地图（折叠地图，长椅 on/next 题用）
+const MAPM_SVG = '<svg viewBox="0 0 40 32" aria-hidden="true"><path d="M6 6 L16 4 L24 7 L34 4 L34 26 L24 28 L16 25 L6 27 Z" fill="#e8d9a8" stroke="#9c7b46" stroke-width="1.5"/><path d="M16 4 L16 25 M24 7 L24 28" stroke="#9c7b46" stroke-width="1.2"/></svg>';
+// 货架（三层金属架，超市方位题用）
+const SHELF_SVG = '<svg viewBox="0 0 56 48" aria-hidden="true"><rect x="8" y="10" width="40" height="5" rx="1" fill="#6b7a86"/><rect x="8" y="22" width="40" height="5" rx="1" fill="#6b7a86"/><rect x="8" y="34" width="40" height="5" rx="1" fill="#6b7a86"/><rect x="10" y="10" width="3" height="29" fill="#555c66"/><rect x="43" y="10" width="3" height="29" fill="#555c66"/></svg>';
+
 // 单个小气球（数量卡片用）
 function balloonSvg(color) {
   return '<svg viewBox="0 0 20 36" aria-hidden="true"><ellipse cx="10" cy="12" rx="7" ry="9" fill="' + color + '"/><path d="M10 21 L10 33" stroke="#888" stroke-width="1.5" fill="none"/></svg>';
@@ -46,6 +55,10 @@ function iconFor(pos) {
   if (pos === 'egg') return EGG_SVG;
   if (pos === 'gift') return GIFT_SVG;
   if (pos === 'candle') return CANDLE_SVG;
+  if (pos === 'table') return TABLE_SVG;
+  if (pos === 'bench') return BENCH_SVG;
+  if (pos === 'map') return MAPM_SVG;
+  if (pos === 'shelf') return SHELF_SVG;
   return '';
 }
 
@@ -125,6 +138,40 @@ export function createLibrary2D(container, levelId = 'library') {
     return btn;
   }
 
+  // 通用 on/next 关系场景：holder 居中，on 候选在它上面，next 在旁边地上。
+  // 候选统一用 candidateSvg，保证和 3D 里是同一种物体（书/地图/苹果）。
+  function holderScene(holder, candidateSvg, side, labels) {
+    root.classList.remove('v2-check');
+    const scene = document.createElement('div');
+    scene.className = 'v2-scene ' + (side === 'left' ? 'next-left' : 'next-right');
+
+    const holderEl = document.createElement('div');
+    holderEl.className = 'v2-holder';
+    holderEl.innerHTML = iconFor(holder);
+
+    const onBtn = document.createElement('button');
+    onBtn.type = 'button';
+    onBtn.className = 'v2-card v2-on';
+    onBtn.dataset.pos = 'on';
+    onBtn.setAttribute('aria-label', labels.on);
+    onBtn.innerHTML = candidateSvg;
+    onBtn.addEventListener('click', () => { if (pickCb) pickCb('on'); });
+
+    const nextBtn = document.createElement('button');
+    nextBtn.type = 'button';
+    nextBtn.className = 'v2-card v2-next';
+    nextBtn.dataset.pos = 'next';
+    nextBtn.setAttribute('aria-label', labels.next);
+    nextBtn.innerHTML = candidateSvg;
+    nextBtn.addEventListener('click', () => { if (pickCb) pickCb('next'); });
+
+    scene.appendChild(holderEl);
+    scene.appendChild(onBtn);
+    scene.appendChild(nextBtn);
+    root.appendChild(scene);
+    cards.push(onBtn, nextBtn);
+  }
+
   // ===== 词义确认 =====
   function showCheck(step) {
     clear();
@@ -142,49 +189,30 @@ export function createLibrary2D(container, levelId = 'library') {
     } else if (step.scene === 'bakery-bag') {
       bagCard('on');
       bagCard('next');
-    } else if (step.scene === 'market-shelf') {
-      // 货架方位：两个苹果，on 用苹果图卡
-      makeCard('on', 'v2-on');
-      makeCard('next', 'v2-next');
-    } else if (step.scene === 'party-book') {
-      makeCard('on', 'v2-on');
-      makeCard('next', 'v2-next');
     } else if (step.scene === 'party-balloons') {
       partyBalloonCard('one');
       partyBalloonCard('two');
-    } else if (step.scene === 'party-direction') {
+    } else if (step.scene === 'party-direction' || step.scene === 'crossing-dir') {
+      // 路口 / 派对方向题：三个方向箭头
       makeCard('left', 'v2-left', ARROW_LEFT);
       makeCard('right', 'v2-right', ARROW_RIGHT);
       makeCard('straight', 'v2-straight', ARROW_STRAIGHT);
+    } else if (step.scene === 'party-book') {
+      // 桌子 + on（桌上）/ next（旁边）两本书
+      holderScene('table', BOOK_SVG, step.side || 'right',
+        { on: 'book on the table', next: 'book next to the table' });
+    } else if (step.scene === 'crossing-bench') {
+      // 长椅 + on（椅面上）/ next（旁边）两张地图
+      holderScene('bench', MAPM_SVG, step.side || 'right',
+        { on: 'map on the bench', next: 'map next to the bench' });
+    } else if (step.scene === 'market-shelf') {
+      // 货架 + on（架上）/ next（旁边）两个苹果
+      holderScene('shelf', APPLE_SVG, step.side || 'right',
+        { on: 'apple on the shelf', next: 'apple next to the shelf' });
     } else {
-      // 图书馆 on/next 场景
-      root.classList.remove('v2-check');
-      const scene = document.createElement('div');
-      scene.className = 'v2-scene ' + (step.side === 'left' ? 'next-left' : 'next-right');
-
-      const holderEl = document.createElement('div');
-      holderEl.className = 'v2-holder';
-      holderEl.innerHTML = iconFor(step.holder);
-
-      const onBtn = document.createElement('button');
-      onBtn.type = 'button';
-      onBtn.className = 'v2-card v2-on';
-      onBtn.dataset.pos = 'on';
-      onBtn.innerHTML = BOOK_SVG;
-      onBtn.addEventListener('click', () => { if (pickCb) pickCb('on'); });
-
-      const nextBtn = document.createElement('button');
-      nextBtn.type = 'button';
-      nextBtn.className = 'v2-card v2-next';
-      nextBtn.dataset.pos = 'next';
-      nextBtn.innerHTML = BOOK_SVG;
-      nextBtn.addEventListener('click', () => { if (pickCb) pickCb('next'); });
-
-      scene.appendChild(holderEl);
-      scene.appendChild(onBtn);
-      scene.appendChild(nextBtn);
-      root.appendChild(scene);
-      cards.push(onBtn, nextBtn);
+      // 图书馆 on/next：cart 或 box 作 holder，候选是书
+      holderScene(step.holder, BOOK_SVG, step.side,
+        { on: 'book on the ' + step.holder, next: 'book next to the ' + step.holder });
     }
   }
 
@@ -211,6 +239,22 @@ export function createLibrary2D(container, levelId = 'library') {
       root.appendChild(demoEl);
       return;
     }
+    if (levelId === 'crossing') {
+      // 路口示范：三个方向箭头，依次高亮
+      const wrap = document.createElement('div');
+      wrap.className = 'v2-demo-dir';
+      const arrows = {};
+      [['left', ARROW_LEFT], ['right', ARROW_RIGHT], ['straight', ARROW_STRAIGHT]].forEach(([d, svg]) => {
+        const b = document.createElement('div');
+        b.className = 'v2-demo-arrow';
+        b.innerHTML = svg;
+        wrap.appendChild(b);
+        arrows[d] = b;
+      });
+      root.appendChild(wrap);
+      demoEl = { arrows };
+      return;
+    }
     root.classList.add('v2-quiz');
     const scene = document.createElement('div');
     scene.className = 'v2-scene';
@@ -234,6 +278,11 @@ export function createLibrary2D(container, levelId = 'library') {
       target.innerHTML = where === 'one'
         ? '<span class="mini-roll">' + ROLL_SVG + '</span>'
         : '<span class="mini-roll">' + ROLL_SVG + '</span><span class="mini-roll">' + ROLL_SVG + '</span>';
+      return;
+    }
+    if (levelId === 'crossing') {
+      Object.entries(demoEl.arrows).forEach(([d, b]) =>
+        b.classList.toggle('demo-arrow-on', d === where));
       return;
     }
     demoEl.classList.toggle('demo-on', where === 'on');

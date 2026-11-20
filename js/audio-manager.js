@@ -32,11 +32,13 @@ export function initAudio(audioEl) {
 
 export function getState() { return audioState; }
 
-// 预加载：逐个 fetch，单个失败不中断，标记 null 以便重试
-export async function preload(keys, onProgress) {
-  let done = 0;
-  for (const key of keys) {
-    if (!blobUrls.has(key)) {
+// 预加载：有限并发 fetch，单个失败不中断，标记 null 以便重试
+export async function preload(keys, onProgress, concurrency = 5) {
+  const todo = keys.filter((k) => !blobUrls.has(k));
+  let idx = 0, done = 0;
+  async function worker() {
+    while (idx < todo.length) {
+      const key = todo[idx++];
       try {
         const res = await fetch(AUDIO[key] || key);
         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -45,10 +47,17 @@ export async function preload(keys, onProgress) {
       } catch {
         blobUrls.set(key, null);
       }
+      done++;
+      if (onProgress) onProgress(done, todo.length, key);
     }
-    done++;
-    if (onProgress) onProgress(done, keys.length, key);
   }
+  const n = Math.max(1, Math.min(concurrency, todo.length));
+  await Promise.all(Array.from({ length: n }, worker));
+}
+
+// 只预加载指定的少量 key（用于进关卡前先保证首音），并发
+export function preloadBackground(keys) {
+  return preload(keys);
 }
 
 export function isReady(key) { return !!blobUrls.get(key); }

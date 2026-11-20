@@ -567,7 +567,9 @@ export function makeCake() {
     emissive: 0xd96f1e, emissiveIntensity: 0.6, roughness: 0.4,
   });
   flame.position.y = 1.18;
+  flame.visible = false;
   g.add(flame);
+  g.userData.flame = flame;
   return g;
 }
 

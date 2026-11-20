@@ -2,6 +2,7 @@
 // 接口与室内视图一致：showCheck / showQuiz / mark / prepareDemo / demoStep / onAction / resetCamera / resize / dispose。
 
 import * as THREE from '../vendor/three.module.js';
+import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 import { makeRabbit, makeBeaver } from './characters.js';
 import {
   makeRoad, makeBuilding, makeSign, makeFlag,
@@ -16,7 +17,8 @@ const DIR_POS = {
   right: new THREE.Vector3(3.6, 0, 0),
   straight: new THREE.Vector3(0, 0, -3.6),
 };
-const FLAG_COLOR = { left: 0x4f93d6, right: 0xef6f5b, straight: 0xf2c14e };
+// 三面旗统一中性色，只靠位置（left/right/straight）区分，不让颜色变成答题线索
+const FLAG_COLOR = { left: 0xe07a3f, right: 0xe07a3f, straight: 0xe07a3f };
 
 function disposeObject(obj) {
   obj.traverse((m) => {
@@ -37,10 +39,17 @@ export function createCrossingScene(container) {
   renderer.setSize(width, height);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0xbfe0f0);
+
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const envMap = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+  scene.environment = envMap;
+  pmrem.dispose();
 
   const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
   const orbit = { ...DEFAULT_ORBIT };
@@ -57,8 +66,8 @@ export function createCrossingScene(container) {
   }
   updateCamera();
 
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x8fae7a, 0.95));
-  const sun = new THREE.DirectionalLight(0xfff6e0, 1.05);
+  scene.add(new THREE.HemisphereLight(0xf2f8ff, 0x6a8a55, 0.55));
+  const sun = new THREE.DirectionalLight(0xfff6e0, 1.5);
   sun.position.set(6, 10, 5);
   sun.castShadow = true;
   sun.shadow.mapSize.set(1024, 1024);
@@ -118,6 +127,7 @@ export function createCrossingScene(container) {
   let pickCb = null;
   let demoGroup = null;
   let demoTarget = null;
+  let lockOrbit = false;
 
   function clear() {
     while (dyn.children.length) {
@@ -127,6 +137,7 @@ export function createCrossingScene(container) {
     currentPickables = [];
     demoGroup = null;
     demoTarget = null;
+    lockOrbit = false;
   }
 
   // 三个方向小旗
@@ -187,6 +198,9 @@ export function createCrossingScene(container) {
       }
       currentPickables.push(f);
     });
+    // 方向题固定视角：自动回正，答题期间不允许自由旋转（left/right 以小兔朝向为准）
+    lockOrbit = true;
+    resetCamera();
   }
 
   function mark(pos, kind) {
@@ -272,6 +286,7 @@ export function createCrossingScene(container) {
   function down(e) { dragging = true; moved = 0; lastX = e.clientX; lastY = e.clientY; }
   function move(e) {
     if (!dragging) return;
+    if (lockOrbit) return;
     const dx = e.clientX - lastX, dy = e.clientY - lastY;
     moved += Math.abs(dx) + Math.abs(dy);
     lastX = e.clientX; lastY = e.clientY;
@@ -279,18 +294,38 @@ export function createCrossingScene(container) {
     orbit.phi = THREE.MathUtils.clamp(orbit.phi - dy * 0.005, 0.5, 1.35);
     updateCamera();
   }
+  // 热点兜底：真实 mesh 没点中时，按热点世界坐标到射线的距离判定（细杆小旗更好点）
+  const hotWorld = new THREE.Vector3();
+  function hotspotPick() {
+    let best = null;
+    for (const p of currentPickables) {
+      if (!p.userData.hotspot) continue;
+      hotWorld.copy(p.userData.hotspot);
+      p.localToWorld(hotWorld);
+      const d = raycaster.ray.distanceToPoint(hotWorld);
+      if (d < 0.8 && (!best || d < best.d)) best = { pick: p.userData.pick, d };
+    }
+    return best;
+  }
+
   function up(e) {
     if (!dragging) return;
     dragging = false;
     if (moved > 8) return;
     setPointer(e);
     raycaster.setFromCamera(pointer, camera);
+    let chosen = null;
     const hits = raycaster.intersectObjects(currentPickables, true);
     if (hits.length) {
       let obj = hits[0].object;
       while (obj && obj.userData.pick === undefined) obj = obj.parent;
-      if (obj && pickCb) pickCb(obj.userData.pick);
+      if (obj) chosen = obj.userData.pick;
     }
+    if (!chosen) {
+      const hp = hotspotPick();
+      if (hp) chosen = hp.pick;
+    }
+    if (chosen && pickCb) pickCb(chosen);
   }
   function wheel(e) {
     e.preventDefault();

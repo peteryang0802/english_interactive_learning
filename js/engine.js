@@ -6,7 +6,7 @@ import * as audio from './audio-manager.js';
 
 const SPEAKER_NAME = { beaver: '河狸馆员', rabbit: '小兔', baker: '面包师', guide: '河狸路人' };
 
-export function createEngine({ els, view, onFinish, config = {} }) {
+export function createEngine({ els, view, onPersist, onFinish, config = {} }) {
   let steps = [];
   let stepIndex = 0;
   let stepToken = 0;
@@ -318,6 +318,10 @@ export function createEngine({ els, view, onFinish, config = {} }) {
 
   function openDone(step) {
     const s = buildSummary();
+    // 结果页显示之前，先一次性把完成状态、道具、解锁写入存档
+    if (typeof onPersist === 'function') {
+      try { onPersist(s); } catch (e) { /* 存储内部已降级，不阻断结算 */ }
+    }
     const skill = step.skillLabel || config.skillLabel || '听辨';
     if (els.doneTitle) els.doneTitle.textContent = step.doneTitle || config.doneTitle || '完成啦';
     els.report.innerHTML =
@@ -326,6 +330,11 @@ export function createEngine({ els, view, onFinish, config = {} }) {
       '<p>重听后选对 ' + s.afterReplay + ' 道</p>' +
       '<p>看字幕或求助完成 ' + s.withHint + ' 道</p>' +
       '<p>中途重听 ' + s.replays + ' 次；词义确认 ' + s.checkIndependent + '/' + s.checkTotal + ' 独立完成</p>';
+    // 结算时收起答题控制条、对话条和说话人，停掉还在响的音频
+    if (els.controlBar) els.controlBar.hidden = true;
+    if (els.dialogueBar) els.dialogueBar.hidden = true;
+    if (els.speaker) els.speaker.hidden = true;
+    audio.stop();
     els.doneModal.hidden = false;
   }
 

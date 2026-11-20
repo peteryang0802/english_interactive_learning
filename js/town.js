@@ -1,4 +1,5 @@
 import * as THREE from '../vendor/three.module.js';
+import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 import { makeRabbit } from './characters.js';
 import {
   makeTree, makeStreetLamp, makeBench, makeBush, makeFlower, makeFountain,
@@ -76,11 +77,18 @@ export function createTown(container, { unlocked, onEnter, onLocked }) {
   renderer.setSize(width, height);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0xbfe3f0);
   scene.fog = new THREE.Fog(0xbfe3f0, 22, 40);
+
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const envMap = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+  scene.environment = envMap;
+  pmrem.dispose();
 
   const camera = new THREE.PerspectiveCamera(48, width / height, 0.1, 100);
   // 相机轨道参数（球坐标）
@@ -99,9 +107,9 @@ export function createTown(container, { unlocked, onEnter, onLocked }) {
   updateCamera();
 
   // 灯光
-  const hemi = new THREE.HemisphereLight(0xffffff, 0x88a07a, 0.85);
+  const hemi = new THREE.HemisphereLight(0xf6fbff, 0x6a8a55, 0.5);
   scene.add(hemi);
-  const sun = new THREE.DirectionalLight(0xfff2d8, 1.1);
+  const sun = new THREE.DirectionalLight(0xfff2d8, 1.5);
   sun.position.set(8, 14, 6);
   sun.castShadow = true;
   sun.shadow.mapSize.set(1024, 1024);
