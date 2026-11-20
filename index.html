@@ -1,108 +1,18 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#10242b">
-  <title>动物小镇英语探险</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f8a8a'/%3E%3Crect x='7' y='9' width='18' height='14' rx='2' fill='%23f7f1e2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css">
-  <!-- 空闲时提前加载 3D 引擎，点进小镇时已缓存，手机上少等一次 -->
-  <link rel="modulepreload" href="vendor/three.module.js">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#3b82f6" />
+  <title>英语听力闯关 · 北师大七上</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <!-- 开始入口 -->
-  <section class="start-card" id="start-card">
-    <div class="start-badge" aria-hidden="true">3D</div>
-    <h1>动物小镇英语探险</h1>
-    <p>小兔要办一场派对。带上它跑遍小镇，听懂英语、大胆开口，把事情一件一件办成。</p>
-    <button type="button" class="big-btn" id="start-btn">进入小镇</button>
-    <p class="start-note">请打开声音，先听，需要时再看字幕</p>
-  </section>
-
-  <!-- 主舞台 -->
-  <section class="stage" id="stage" hidden>
-    <header class="hud-top">
-      <button type="button" class="hud-btn" id="back-btn" hidden>回小镇地图</button>
-      <div class="hud-title" id="hud-title">动物小镇</div>
-      <button type="button" class="hud-btn" id="view-toggle" hidden>切平面</button>
-      <button type="button" class="hud-btn bag" id="bag-btn">背包 <span id="bag-count">0</span></button>
-    </header>
-
-    <div class="main-area">
-      <div class="canvas-wrap" id="canvas-wrap">
-        <div class="loading" id="loading" hidden><span>正在准备…</span></div>
-        <div class="town-menu" id="town-menu" hidden></div>
-      </div>
-
-      <div class="bottom-panel">
-        <div class="progress" id="progress" hidden></div>
-
-        <!-- 对话行：没有中文，英文默认隐藏 -->
-        <div class="speaker-row" id="speaker-row" hidden>
-          <div class="avatar avatar--beaver" id="speaker-avatar" aria-hidden="true"></div>
-          <div class="speaker-meta">
-            <span id="speaker-name">河狸馆员</span>
-            <p class="en-line" id="en-line" lang="en-US" hidden></p>
-          </div>
-        </div>
-
-        <!-- 对话控制条 -->
-        <div class="dialogue-bar" id="dialogue-bar" hidden>
-          <button type="button" class="ctrl ghost" id="dialogue-prev">上一句</button>
-          <button type="button" class="ctrl ghost" id="dialogue-replay"><span class="horn" aria-hidden="true"></span>重听</button>
-          <button type="button" class="ctrl ghost" id="dialogue-pause">暂停</button>
-          <button type="button" class="ctrl ghost" id="dialogue-caption">看字幕</button>
-          <button type="button" class="ctrl" id="dialogue-next">跳过</button>
-        </div>
-
-        <!-- 任务控制条 -->
-        <div class="control-bar" id="control-bar" hidden>
-          <button type="button" class="ctrl" id="replay-btn"><span class="horn" aria-hidden="true"></span>再听一次</button>
-          <button type="button" class="ctrl ghost" id="caption-btn">看字幕</button>
-          <button type="button" class="ctrl ghost" id="demo-btn">看示范</button>
-          <button type="button" class="ctrl ghost" id="camera-btn">题目视角</button>
-        </div>
-
-        <p class="tip" id="tip" role="status"></p>
-      </div>
-    </div>
-
-    <!-- 开口环节（自愿跟读，不做发音评分） -->
-    <div class="modal" id="speak-modal" role="dialog" aria-modal="true" aria-labelledby="speak-title" hidden>
-      <div class="modal-box">
-        <h2 id="speak-title">跟读练习</h2>
-        <p class="speak-note">自愿跟着说，练几遍都行，不打分。</p>
-        <p class="speak-en" id="speak-en" lang="en-US">Can I check this out, please?</p>
-        <div class="speak-actions">
-          <button type="button" class="ctrl" id="speak-listen"><span class="horn" aria-hidden="true"></span>听范音</button>
-          <button type="button" class="big-btn" id="speak-done">我练过了</button>
-        </div>
-        <button type="button" class="skip-link" id="speak-skip">先不说，跳过</button>
-      </div>
-    </div>
-
-    <!-- 完成 -->
-    <div class="modal" id="done-modal" role="dialog" aria-modal="true" aria-labelledby="done-title" hidden>
-      <div class="modal-box">
-        <h2 id="done-title">书借到啦</h2>
-        <div class="report" id="report"></div>
-        <button type="button" class="big-btn" id="done-continue">回小镇，继续探险</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- 背包弹层 -->
-  <div class="modal" id="bag-modal" role="dialog" aria-modal="true" aria-labelledby="bag-title" hidden>
-    <div class="modal-box">
-      <h2 id="bag-title">我的背包</h2>
-      <div class="bag-content" id="bag-content"></div>
-      <button type="button" class="big-btn" id="bag-close">关上背包</button>
-    </div>
+  <div id="app">
+    <main id="view" class="view"></main>
   </div>
 
-  <audio id="voice" preload="auto"></audio>
-
-  <script type="module" src="js/main.js"></script>
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
