@@ -613,6 +613,37 @@ export function makeGift(color = 0x4f93d6) {
   return g;
 }
 
+// 折叠地图：米黄图板 + 折痕 + 红色定位点
+export function makeMap() {
+  const g = new THREE.Group();
+  const board = part(new THREE.BoxGeometry(0.72, 0.04, 0.56), 0xf3e6c4, { roughness: 0.9 });
+  board.position.y = 0.02;
+  g.add(board);
+  // 折痕：一条纵向、一条横向
+  const fold1 = part(new THREE.BoxGeometry(0.02, 0.045, 0.56), 0x9c7b46);
+  fold1.position.y = 0.045;
+  const fold2 = part(new THREE.BoxGeometry(0.72, 0.045, 0.02), 0x9c7b46);
+  fold2.position.y = 0.045;
+  g.add(fold1, fold2);
+  // 红色定位点
+  const pin = part(new THREE.CylinderGeometry(0.05, 0.05, 0.05, 12), 0xd6503e);
+  pin.position.set(0.18, 0.07, -0.1);
+  g.add(pin);
+  return g;
+}
+
+// 平放的书：封皮 + 书页，和派对答题候选的书保持同一观感
+export function makeBook() {
+  const g = new THREE.Group();
+  const cover = part(new THREE.BoxGeometry(0.5, 0.12, 0.36), 0x2f7d8c);
+  cover.position.y = 0.06;
+  g.add(cover);
+  const pages = part(new THREE.BoxGeometry(0.42, 0.06, 0.3), 0xf7f1e2);
+  pages.position.y = 0.13;
+  g.add(pages);
+  return g;
+}
+
 // 派对横幅：一根绳 + 一串三角旗
 export function makeBanner() {
   const g = new THREE.Group();

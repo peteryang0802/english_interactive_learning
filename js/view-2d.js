@@ -64,10 +64,29 @@ function iconFor(pos) {
   return '';
 }
 
-export function createLibrary2D(container, levelId = 'library') {
+export function createLibrary2D(container, levelId = 'library', opts = {}) {
   const root = document.createElement('div');
   root.className = 'view2d';
   container.appendChild(root);
+
+  // 派对关：把背包里带来的道具做成常驻顶栏，独立于 root，clear 重画答题卡片时不消失
+  let broughtBar = null;
+  const broughtItems = Array.isArray(opts.items) ? opts.items : [];
+  const BROUGHT_ICON = {
+    'party-book': BOOK_SVG,
+    'party-rolls': ROLL_SVG,
+    'party-map': MAPM_SVG,
+    'party-groceries': BASKET_SVG,
+  };
+  if (levelId === 'party' && broughtItems.length) {
+    broughtBar = document.createElement('div');
+    broughtBar.className = 'v2-brought';
+    broughtBar.innerHTML = '<span class="brought-label">我带来的</span>' +
+      broughtItems.map((id) =>
+        BROUGHT_ICON[id] ? '<span class="brought-icon">' + BROUGHT_ICON[id] + '</span>' : ''
+      ).join('');
+    container.appendChild(broughtBar);
+  }
 
   let pickCb = null;
   let cards = [];
@@ -329,6 +348,7 @@ export function createLibrary2D(container, levelId = 'library') {
 
   function dispose() {
     pickCb = null;
+    if (broughtBar && broughtBar.parentNode) broughtBar.parentNode.removeChild(broughtBar);
     if (root.parentNode) root.parentNode.removeChild(root);
   }
 

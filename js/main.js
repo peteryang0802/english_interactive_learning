@@ -24,6 +24,16 @@ const RUN_BUILDERS = {
   party: { build: buildPartyRun, audioKeys: PARTY_AUDIO_KEYS },
 };
 
+// 派对通关清单：每件收集道具在派对上的交代，顺序按收集先后，蛋糕放最后
+const PARTY_ITEM_USE = {
+  'party-book': '放在桌上，派对上一起看',
+  'party-rolls': '放在桌上，当派对点心',
+  'party-map': '问路时靠它，找到派对',
+  'party-groceries': '超市买齐，都带到派对',
+  'party-cake': '点上蜡烛，唱生日歌',
+};
+const PARTY_DONE_ORDER = ['party-book', 'party-rolls', 'party-map', 'party-groceries', 'party-cake'];
+
 const els = {
   start: $('start-card'), stage: $('stage'),
   hudTitle: $('hud-title'), back: $('back-btn'), viewToggle: $('view-toggle'),
@@ -150,7 +160,7 @@ async function applyView(want3D) {
   els.loading.hidden = false;
   let result;
   try {
-    result = await createLevelView(els.wrap, currentLevelId, want3D);
+    result = await createLevelView(els.wrap, currentLevelId, want3D, { items: save.items });
   } catch (e) {
     els.loading.hidden = true;
     setTip('没切过去，先继续当前画面。', 'bad');
@@ -209,18 +219,31 @@ async function enterLevel(id, resume = false) {
   els.loading.hidden = false;
   // 音频后台并发预加载，不阻塞进关卡；播放时若还没好，就走即时拉取（有 loading 提示）
   audio.preload(builder.audioKeys);
-  const { view, is3D } = await createLevelView(els.wrap, id, use3D);
+  const { view, is3D } = await createLevelView(els.wrap, id, use3D, { items: save.items });
   activeView = view;
   if (!is3D) use3D = false;
 
   els.loading.hidden = true;
 
+  const config = { skillLabel: level.skillLabel, levelId: id, doneTitle: level.doneTitle };
+  if (id === 'party') {
+    config.doneItems = PARTY_DONE_ORDER.map((itemId) => {
+      const rewardLevel = LEVELS.find((l) => l.reward.id === itemId);
+      const reward = rewardLevel ? rewardLevel.reward : null;
+      return {
+        id: itemId,
+        name: reward ? reward.name : itemId,
+        svg: reward ? reward.svg : '',
+        use: PARTY_ITEM_USE[itemId] || '',
+      };
+    });
+  }
   engine = createEngine({
     els, view: activeView,
     onPersist: persistLevel,
     onFinish: returnToTown,
     onStep: (idx) => saveProgress(save, currentLevelId, idx),
-    config: { skillLabel: level.skillLabel, levelId: id, doneTitle: level.doneTitle },
+    config,
   });
   window.__engine = engine;
   window.__activeView = activeView;

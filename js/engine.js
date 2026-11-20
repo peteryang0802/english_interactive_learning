@@ -529,6 +529,15 @@ export function createEngine({ els, view, onPersist, onFinish, onStep, config = 
     if (els.doneTitle) els.doneTitle.textContent = step.doneTitle || config.doneTitle || '完成啦';
 
     let html = '';
+    // 派对关：先给“收集的东西都用上啦”的交代，再放技能报告
+    if (Array.isArray(config.doneItems) && config.doneItems.length) {
+      html += '<div class="done-items"><p class="done-items-title">东西都用上啦</p>' +
+        config.doneItems.map((it) =>
+          '<div class="done-item"><span class="done-item-icon" aria-hidden="true">' + (it.svg || '') +
+          '</span><span class="done-item-text"><span class="done-item-name">' + it.name +
+          '</span><span class="done-item-use">' + it.use + '</span></span></div>'
+        ).join('') + '</div>';
+    }
     Object.keys(s.bySkill).forEach((key) => {
       const b = s.bySkill[key];
       html += '<p class="report-skill">' + (SKILL_LABELS[key] || key) + '共 ' + b.total + ' 道：</p>' +

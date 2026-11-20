@@ -31,13 +31,14 @@ export function disable3D() {
 }
 
 // 创建 3D 关卡视图；任何失败都回退到 2D，并通过返回值告诉调用方实际用了哪种
-export async function createLevelView(container, id, prefer3D) {
+// opts.items 用于派对关把背包道具真摆进场景
+export async function createLevelView(container, id, prefer3D, opts = {}) {
   if (prefer3D) {
     try {
       const m = await load3DModules();
       let view;
       if (id === 'crossing') view = m.createCrossingScene(container);
-      else if (id === 'party') view = m.createPartyScene(container);
+      else if (id === 'party') view = m.createPartyScene(container, opts);
       else view = m.createLibraryScene(container, id);
       return { view, is3D: true };
     } catch (err) {
@@ -46,7 +47,7 @@ export async function createLevelView(container, id, prefer3D) {
   }
   // 防御：清掉可能残留的旧平面视图，避免多个 root 叠加把卡片挤出视口
   container.querySelectorAll('.view2d').forEach((el) => el.remove());
-  return { view: createLibrary2D(container, id), is3D: false };
+  return { view: createLibrary2D(container, id, opts), is3D: false };
 }
 
 // 创建 3D 小镇地图；失败返回 null，由调用方渲染 HTML 菜单

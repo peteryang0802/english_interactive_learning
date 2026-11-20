@@ -295,6 +295,36 @@ button { font-family: inherit; cursor: pointer; }
 .report { text-align: left; line-height: 1.8; margin-bottom: 18px; font-size: 16px; }
 .report p { margin: 4px 0; }
 
+/* 派对通关“东西都用上啦”清单 */
+.done-items {
+  background: #eef7f4;
+  border: 2px solid #bfe0d8;
+  border-radius: 16px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+.done-items-title {
+  margin: 0 0 10px;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--teal-deep);
+}
+.done-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--paper);
+  border-radius: 12px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+.done-item:last-child { margin-bottom: 0; }
+.done-item-icon { flex: 0 0 auto; display: flex; align-items: center; }
+.done-item-icon svg { width: 40px; height: auto; display: block; }
+.done-item-text { display: flex; flex-direction: column; min-width: 0; }
+.done-item-name { font-weight: 700; font-size: 15px; color: var(--berry); }
+.done-item-use { font-size: 14px; color: var(--muted); line-height: 1.4; }
+
 /* ===== 背包 ===== */
 .bag-content { margin-bottom: 16px; }
 .bag-item {
@@ -415,6 +445,26 @@ button { font-family: inherit; cursor: pointer; }
 }
 .v2-demo-count > svg { width: 90px; height: auto; }
 .v2-demo-count .roll-row { display: flex; gap: 6px; }
+
+/* 派对 2D：常驻带来的道具栏，重画答题卡片时不消失 */
+.v2-brought {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: rgba(251, 246, 236, .94);
+  border-radius: 14px;
+  padding: 8px 12px;
+  box-shadow: var(--shadow);
+  z-index: 4;
+}
+.brought-label { font-weight: 700; color: var(--teal-deep); font-size: 14px; }
+.brought-icon { display: inline-flex; }
+.brought-icon svg { width: 30px; height: auto; display: block; }
 
 /* ===== 手机竖屏 ===== */
 @media (max-width: 560px) {

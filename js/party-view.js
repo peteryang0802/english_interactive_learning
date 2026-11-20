@@ -8,7 +8,25 @@ import { makeRabbit, makeBeaver } from './characters.js';
 import {
   makeTable, makeChair, makeTree, makeBush, makeFlower, makeFlag,
   makeCake, makeBalloon, makeGift, makeBanner,
+  makeMap, makeBook, makeRoll, makeBasket,
 } from './props.js';
+
+// 背包道具在置物桌上的固定槽位（相对桌心），缺哪样就空哪格，位置不漂移
+const BROUGHT_SLOTS = {
+  'party-book': { x: -0.5, z: -0.26 },
+  'party-rolls': { x: 0.5, z: -0.26 },
+  'party-map': { x: -0.5, z: 0.26 },
+  'party-groceries': { x: 0.5, z: 0.26 },
+};
+// 各道具缩放，控制在槽位内，相邻不重叠
+const BROUGHT_SCALE = {
+  'party-book': 1,
+  'party-rolls': 0.9,
+  'party-map': 0.85,
+  'party-groceries': 0.7,
+};
+// 置物桌位置（左前方，默认视野内，远离答题候选和方向旗）
+const BROUGHT_TABLE_POS = { x: -2.7, z: 2.4 };
 
 const DEFAULT_ORBIT = { theta: 0.3, phi: 1.02, radius: 9 };
 
@@ -41,7 +59,7 @@ function part(geometry, color, extra = {}) {
   return m;
 }
 
-export function createPartyScene(container) {
+export function createPartyScene(container, opts = {}) {
   const width = container.clientWidth;
   const height = container.clientHeight;
 
@@ -139,6 +157,28 @@ export function createPartyScene(container) {
   host.rotation.y = 0.3;
   const rabbit = addStatic(makeRabbit(), 0, 3.0);
   rabbit.rotation.y = Math.PI;
+
+  // 置物桌：把背包里带来的派对道具真摆进场景，有什么摆什么
+  const broughtItems = Array.isArray(opts.items) ? opts.items : [];
+  if (broughtItems.length) {
+    addStatic(makeTable(), BROUGHT_TABLE_POS.x, BROUGHT_TABLE_POS.z);
+    Object.keys(BROUGHT_SLOTS).forEach((itemId) => {
+      if (!broughtItems.includes(itemId)) return;
+      let obj;
+      if (itemId === 'party-book') obj = makeBook();
+      else if (itemId === 'party-rolls') obj = makeRoll();
+      else if (itemId === 'party-map') obj = makeMap();
+      else obj = makeBasket();
+      const slot = BROUGHT_SLOTS[itemId];
+      obj.scale.setScalar(BROUGHT_SCALE[itemId]);
+      obj.position.set(
+        BROUGHT_TABLE_POS.x + slot.x,
+        1.0,
+        BROUGHT_TABLE_POS.z + slot.z
+      );
+      scene.add(obj);
+    });
+  }
 
   // 动态挂载点
   const dyn = new THREE.Group();
