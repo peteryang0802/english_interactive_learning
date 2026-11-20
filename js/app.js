@@ -13,6 +13,8 @@ const LEVELS = [
   { id:'unit4', data:unit4, color:'#ec4899', emoji:'4', name:'Unit 4 兴趣能力', desc:'爱好、能力与才艺' },
 ];
 const KEYS=['A','B','C'];
+const AUDIO_VERSION=3;
+const withVer=f=>f+(f.includes('?')?'&':'?')+'v='+AUDIO_VERSION;
 const keyOf = q => Array.isArray(q.audio) ? q.audio.join('\u0001') : q.audio;
 const view = document.getElementById('view');
 const player = new Audio();
@@ -239,7 +241,7 @@ function tick(){
 }
 
 function loadAndPlay(){
-  const file=audioMap[keyOf(cur())];
+  const file=withVer(audioMap[keyOf(cur())]);
   player.src=file; player.currentTime=0;
   player.play().catch(()=>{});
 }
