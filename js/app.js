@@ -38,6 +38,17 @@ function lsRemove(k){ try{ localStorage.removeItem(k); }catch{} }
 function loadBest(){ return lsGet(BEST_KEY)||{}; }
 function loadProgress(){ return lsGet(PROG_KEY); }
 function loadLast(){ return lsGet(LAST_KEY)||{}; }
+// 一次性迁移：旧版最佳成绩按“答对题数”记录（含看原文、猜中的高估分），
+// 新口径只认“首听独立”。旧结构没有 first 字段，直接废弃，让孩子按新口径重新积累。
+function migrateStorage(){
+  const best=loadBest();
+  let changed=false;
+  Object.keys(best).forEach(k=>{
+    const b=best[k];
+    if(!b || typeof b.first!=='number'){ delete best[k]; changed=true; }
+  });
+  if(changed) lsSet(BEST_KEY,best);
+}
 
 // ============ 统一定时器管理（退出时全部取消，杜绝退出后翻题） ============
 const timerIds=new Set();
@@ -551,5 +562,6 @@ function onParentClear(id){
 
 // 启动
 storageOK=storageAvailable();
+migrateStorage();
 location.hash=location.hash||'#/home';
 router();
