@@ -34,6 +34,8 @@ button { font-family:inherit; cursor:pointer; border:none; background:none; colo
 .level-meta .desc { font-size:13px; color:var(--sub); margin-top:2px; }
 .level-meta .best { font-size:12px; color:var(--c); margin-top:4px; font-weight:600; }
 .level-arrow { color:#9ca3af; font-size:20px; }
+.home-foot { padding-top:22px; text-align:center; }
+.parent-link { min-height:44px; padding:10px 18px; color:var(--sub); font-size:13px; text-decoration:underline; }
 
 /* ===== 开始过渡页 ===== */
 .intro { display:flex; flex-direction:column; gap:16px; padding-top:24px; }
@@ -118,6 +120,29 @@ button { font-family:inherit; cursor:pointer; border:none; background:none; colo
 .stat { background:var(--bg); border-radius:12px; padding:12px 6px; }
 .stat .v { font-size:20px; font-weight:700; } .stat .l { font-size:12px; color:var(--sub); margin-top:2px; }
 .result-actions { display:grid; gap:12px; }
+
+/* ===== 家长管理 ===== */
+.parent { display:flex; flex-direction:column; gap:16px; padding-top:18px; }
+.parent-head h2 { font-size:22px; }
+.parent-note { color:var(--sub); font-size:13px; margin-top:8px; line-height:1.6; }
+.parent-toast { background:#f0fdf4; color:var(--ok); border:1px solid #bbf7d0; border-radius:12px; padding:11px 14px; font-size:14px; font-weight:600; }
+.parent-card { background:#fff; border-radius:16px; box-shadow:var(--shadow); overflow:hidden; }
+.rec-row { display:flex; align-items:center; gap:12px; padding:14px 16px; }
+.rec-row + .rec-row { border-top:1px solid var(--line); }
+.rec-dot { width:40px;height:40px;flex:0 0 40px;border-radius:10px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:15px; }
+.rec-meta { flex:1; min-width:0; display:flex; flex-direction:column; }
+.rec-name { font-size:15px; font-weight:600; }
+.rec-val { font-size:12px; color:var(--sub); margin-top:2px; }
+.rec-val .muted { color:#9ca3af; }
+.rec-clear { min-height:44px; padding:6px 16px; border-radius:99px; border:1px solid var(--line); color:var(--sub); font-size:14px; font-weight:600; background:#fff; }
+.rec-clear:disabled { opacity:.45; cursor:default; }
+.rec-clear.armed { background:var(--no); border-color:var(--no); color:#fff; }
+.btn-danger {
+  width:100%; min-height:52px; border-radius:14px; background:#fff; color:var(--no);
+  font-size:16px; font-weight:600; border:2px solid #fecaca;
+}
+.btn-danger.armed { background:var(--no); border-color:var(--no); color:#fff; }
+.btn-danger:disabled { opacity:.45; border-color:var(--line); color:var(--sub); }
 
 @media (min-width:560px){
   .view { padding-top:32px; }

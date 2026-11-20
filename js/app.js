@@ -24,6 +24,13 @@ const BEST_KEY='english-listening-best';
 function loadBest(){ try{ return JSON.parse(localStorage.getItem(BEST_KEY))||{}; }catch{ return {}; } }
 function saveBest(o){ try{ localStorage.setItem(BEST_KEY,JSON.stringify(o)); }catch{} }
 
+// 家长管理：删除二次确认状态
+let parentConfirm=null, parentConfirmTimer=null, parentToast='';
+function resetParentConfirm(){
+  parentConfirm=null;
+  if(parentConfirmTimer){ clearTimeout(parentConfirmTimer); parentConfirmTimer=null; }
+}
+
 function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 // ============ 路由 ============
@@ -31,7 +38,9 @@ function router(){
   cleanupRun();
   const hash=location.hash||'#/home';
   const parts=hash.split('/');
-  if(parts[1]==='intro') renderIntro(LEVELS.findIndex(l=>l.id===parts[2]));
+  if(parts[1]!=='parent'){ resetParentConfirm(); parentToast=''; }
+  if(parts[1]==='parent') renderParent();
+  else if(parts[1]==='intro') renderIntro(LEVELS.findIndex(l=>l.id===parts[2]));
   else if(parts[1]==='play') beginRun(LEVELS.findIndex(l=>l.id===parts[2]));
   else if(parts[1]==='result') renderResult(LEVELS.findIndex(l=>l.id===parts[2]));
   else renderHome();
@@ -65,9 +74,75 @@ function renderHome(){
           <span class="level-arrow">›</span>
         </button>`;
       }).join('')}
+    </div>
+    <div class="home-foot">
+      <button class="parent-link" id="parent-link">家长管理</button>
     </div>`;
   view.querySelectorAll('.level-card').forEach(b=>
     b.addEventListener('click',()=>location.hash='#/intro/'+LEVELS[b.dataset.i].id));
+  document.getElementById('parent-link').addEventListener('click',()=>location.hash='#/parent');
+}
+
+// ============ 家长管理 ============
+function renderParent(){
+  const best=loadBest();
+  const hasAny=LEVELS.some(l=>best[l.id]);
+  view.innerHTML=`
+    <div class="parent">
+      <div class="parent-head">
+        <h2>家长管理</h2>
+        <p class="parent-note">这里可以清除孩子的最佳成绩记录。清除后无法恢复，孩子重新练习会生成新记录。</p>
+      </div>
+      ${parentToast?`<div class="parent-toast">${esc(parentToast)}</div>`:''}
+      <div class="parent-card">
+        ${LEVELS.map(l=>{
+          const b=best[l.id];
+          return `
+          <div class="rec-row">
+            <span class="rec-dot" style="background:${l.color}">${l.emoji}</span>
+            <span class="rec-meta">
+              <span class="rec-name">${esc(l.name)}</span>
+              <span class="rec-val">${b?`最佳 ${b.correct}/30 题`:`<span class="muted">暂无记录</span>`}</span>
+            </span>
+            <button class="rec-clear ${parentConfirm===l.id?'armed':''}" data-id="${l.id}" ${b?'':'disabled'}>
+              ${parentConfirm===l.id?'确认清除':'清除'}
+            </button>
+          </div>`;
+        }).join('')}
+      </div>
+      <button class="btn-danger ${parentConfirm==='all'?'armed':''}" id="clear-all" ${hasAny?'':'disabled'}>
+        ${parentConfirm==='all'?'再次点击，确认全部清除':'一键清除全部记录'}
+      </button>
+      <button class="btn-ghost" id="parent-back">返回首页</button>
+    </div>`;
+  view.querySelectorAll('.rec-clear').forEach(btn=>
+    btn.addEventListener('click',()=>onParentClear(btn.dataset.id)));
+  document.getElementById('clear-all').addEventListener('click',()=>onParentClear('all'));
+  document.getElementById('parent-back').addEventListener('click',()=>location.hash='#/home');
+}
+
+function onParentClear(id){
+  if(parentConfirm===id){
+    resetParentConfirm();
+    if(id==='all'){
+      try{ localStorage.removeItem(BEST_KEY); }catch{}
+      try{ sessionStorage.removeItem('last-result'); }catch{}
+      parentToast='已清除全部记录';
+    }else{
+      const best=loadBest();
+      delete best[id];
+      saveBest(best);
+      parentToast=`已清除「${LEVELS.find(l=>l.id===id).name}」的记录`;
+    }
+    renderParent();
+  }else{
+    resetParentConfirm();
+    parentConfirm=id;
+    parentConfirmTimer=setTimeout(()=>{
+      parentConfirm=null; parentConfirmTimer=null; renderParent();
+    },3000);
+    renderParent();
+  }
 }
 
 // ============ 开始过渡 ============
