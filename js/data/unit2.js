@@ -57,11 +57,11 @@ export const unit2 = {
           "img": "classmate"
         },
         {
-          "t": "老师",
+          "t": "任课老师",
           "img": "teacher"
         },
         {
-          "t": "妹妹",
+          "t": "亲妹妹",
           "img": "sister"
         }
       ],
@@ -97,10 +97,10 @@ export const unit2 = {
       "audio": "Which subject do you like best?",
       "options": [
         {
-          "t": "I have lunch at twelve."
+          "t": "My favourite subject is History."
         },
         {
-          "t": "I like apples."
+          "t": "My favourite subject is English."
         },
         {
           "t": "My favourite subject is Chinese."
@@ -282,13 +282,13 @@ export const unit2 = {
       "ask": "How does Lucy feel about Science?",
       "options": [
         {
-          "t": "Very easy."
+          "t": "Very easy for me."
         },
         {
           "t": "A little difficult."
         },
         {
-          "t": "Great fun."
+          "t": "Great fun for me."
         }
       ],
       "answer": 1,
@@ -307,10 +307,10 @@ export const unit2 = {
       "ask": "What has Mike got?",
       "options": [
         {
-          "t": "One pen."
+          "t": "Just one pen."
         },
         {
-          "t": "Many books."
+          "t": "So many books."
         },
         {
           "t": "Two pencils."
@@ -332,13 +332,13 @@ export const unit2 = {
       "ask": "What does the boy want to do?",
       "options": [
         {
-          "t": "Buy a pen."
+          "t": "Buy a new pen."
         },
         {
           "t": "Borrow a pencil."
         },
         {
-          "t": "Read a book."
+          "t": "Read a new book."
         }
       ],
       "answer": 1,
@@ -407,10 +407,10 @@ export const unit2 = {
       "ask": "Who is Miss Wang?",
       "options": [
         {
-          "t": "A new classmate."
+          "t": "A new girl classmate."
         },
         {
-          "t": "A Science student."
+          "t": "A young Science student."
         },
         {
           "t": "An English teacher."
@@ -435,7 +435,7 @@ export const unit2 = {
           "t": "Strict and cold."
         },
         {
-          "t": "Often late."
+          "t": "Rude and lazy."
         },
         {
           "t": "Kind and helpful."
@@ -535,10 +535,10 @@ export const unit2 = {
           "t": "The lessons on Monday."
         },
         {
-          "t": "A birthday party."
+          "t": "A school birthday party."
         },
         {
-          "t": "Family dinner."
+          "t": "A big family dinner."
         }
       ],
       "answer": 0,
@@ -572,13 +572,13 @@ export const unit2 = {
       "ask": "What is David mainly talking about?",
       "options": [
         {
-          "t": "His family."
+          "t": "His big family."
         },
         {
           "t": "His school life."
         },
         {
-          "t": "His weekend."
+          "t": "His busy weekend."
         }
       ],
       "answer": 1,

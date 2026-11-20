@@ -101,11 +101,11 @@ export const starter = {
           "img": "library"
         },
         {
-          "t": "操场",
+          "t": "运动场",
           "img": "playground"
         },
         {
-          "t": "教室",
+          "t": "自习室",
           "img": "classroom"
         }
       ],
@@ -167,7 +167,7 @@ export const starter = {
           "img": "rainy"
         },
         {
-          "t": "晴天蓝天",
+          "t": "晴天",
           "img": "sunny"
         },
         {
@@ -191,7 +191,7 @@ export const starter = {
           "t": "Good morning!"
         },
         {
-          "t": "Goodbye!"
+          "t": "Good evening!"
         }
       ],
       "answer": 1,
@@ -204,13 +204,13 @@ export const starter = {
       "audio": "Where are you from?",
       "options": [
         {
-          "t": "I'm ten."
+          "t": "I'm from Canada."
         },
         {
           "t": "I'm from China."
         },
         {
-          "t": "I'm fine."
+          "t": "I'm from England."
         }
       ],
       "answer": 1,
@@ -226,10 +226,10 @@ export const starter = {
           "t": "Nice to meet you, too."
         },
         {
-          "t": "Thank you."
+          "t": "See you tomorrow."
         },
         {
-          "t": "I'm sorry."
+          "t": "Have a good day."
         }
       ],
       "answer": 0,
@@ -261,10 +261,10 @@ export const starter = {
       "audio": "What's your favourite subject?",
       "options": [
         {
-          "t": "I'm from Beijing."
+          "t": "My favourite subject is Art."
         },
         {
-          "t": "I get up at seven."
+          "t": "My favourite subject is Maths."
         },
         {
           "t": "My favourite subject is PE."
@@ -280,10 +280,10 @@ export const starter = {
       "audio": "How old are you?",
       "options": [
         {
-          "t": "I'm fine."
+          "t": "I'm eleven."
         },
         {
-          "t": "I'm here."
+          "t": "I'm thirteen."
         },
         {
           "t": "I'm twelve."
@@ -557,13 +557,13 @@ export const starter = {
       "ask": "What are they talking about?",
       "options": [
         {
-          "t": "Having dinner."
+          "t": "Getting dressed for school."
         },
         {
           "t": "Getting up late for school."
         },
         {
-          "t": "Reading books."
+          "t": "Having breakfast at home."
         }
       ],
       "answer": 1,
@@ -586,10 +586,10 @@ export const starter = {
           "t": "Go to school."
         },
         {
-          "t": "Go to bed."
+          "t": "Go to sleep."
         },
         {
-          "t": "Have lunch."
+          "t": "Go to class."
         }
       ],
       "answer": 0,

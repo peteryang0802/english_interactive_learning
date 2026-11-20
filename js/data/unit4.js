@@ -31,11 +31,11 @@ export const unit4 = {
       "audio": "She plays the violin very well.",
       "options": [
         {
-          "t": "钢琴",
+          "t": "弹钢琴",
           "img": "piano"
         },
         {
-          "t": "吉他",
+          "t": "弹吉他",
           "img": "guitar"
         },
         {
@@ -57,11 +57,11 @@ export const unit4 = {
           "img": "sing-dance"
         },
         {
-          "t": "画画",
+          "t": "画画涂色",
           "img": "draw"
         },
         {
-          "t": "读书",
+          "t": "读书写字",
           "img": "read"
         }
       ],
@@ -94,10 +94,10 @@ export const unit4 = {
       "audio": "What can you do?",
       "options": [
         {
-          "t": "I like apples."
+          "t": "I can pick red apples."
         },
         {
-          "t": "I am ten."
+          "t": "I can count to ten."
         },
         {
           "t": "I can draw nice pictures."
@@ -113,10 +113,10 @@ export const unit4 = {
       "audio": "What do you enjoy doing on Sunday?",
       "options": [
         {
-          "t": "I can swim."
+          "t": "I enjoy swimming."
         },
         {
-          "t": "At home."
+          "t": "I enjoy staying home."
         },
         {
           "t": "I enjoy reading."
@@ -131,7 +131,7 @@ export const unit4 = {
       "type": "judge",
       "screen": {
         "img": "boy-violin",
-        "t": "男孩拉小提琴"
+        "t": "男孩会拉小提琴"
       },
       "audio": "He can play the violin.",
       "options": [
@@ -143,7 +143,7 @@ export const unit4 = {
         }
       ],
       "answer": 0,
-      "point": "can / play the violin",
+      "point": "情态动词 can 表示“会不会”（能力）",
       "limit": 20
     },
     {
@@ -202,10 +202,10 @@ export const unit4 = {
       "ask": "What does Bob do at the weekend?",
       "options": [
         {
-          "t": "Play chess."
+          "t": "Play chess games."
         },
         {
-          "t": "Learn French."
+          "t": "Learn French songs."
         },
         {
           "t": "Sing English songs."
@@ -230,10 +230,10 @@ export const unit4 = {
           "t": "The piano and the guitar."
         },
         {
-          "t": "Only the violin."
+          "t": "The violin and the drums."
         },
         {
-          "t": "Chess and tennis."
+          "t": "Chess and tennis matches."
         }
       ],
       "answer": 0,
@@ -355,10 +355,10 @@ export const unit4 = {
           "t": "Weekend activities."
         },
         {
-          "t": "School lessons."
+          "t": "The school lessons."
         },
         {
-          "t": "Family members."
+          "t": "The family members."
         }
       ],
       "answer": 0,
@@ -377,13 +377,13 @@ export const unit4 = {
       "ask": "Why does the boy talk to Tom?",
       "options": [
         {
-          "t": "To play tennis with him."
+          "t": "To play tennis with him after school."
         },
         {
           "t": "To invite him to the chess club."
         },
         {
-          "t": "To borrow a book."
+          "t": "To borrow a book from him."
         }
       ],
       "answer": 1,
@@ -427,13 +427,13 @@ export const unit4 = {
       "ask": "What can Lily do?",
       "options": [
         {
-          "t": "Sing."
+          "t": "To sing."
         },
         {
-          "t": "Draw."
+          "t": "To draw."
         },
         {
-          "t": "Dance."
+          "t": "To dance."
         }
       ],
       "answer": 2,
@@ -455,10 +455,10 @@ export const unit4 = {
           "t": "What they can do for the show."
         },
         {
-          "t": "Their weekend plans."
+          "t": "Their plans for the weekend."
         },
         {
-          "t": "Their favourite subjects."
+          "t": "Their favourite subjects at school."
         }
       ],
       "answer": 0,
@@ -492,10 +492,10 @@ export const unit4 = {
       "ask": "What is Jack mainly talking about?",
       "options": [
         {
-          "t": "His family."
+          "t": "His big family."
         },
         {
-          "t": "His school subjects."
+          "t": "His favourite school subjects."
         },
         {
           "t": "His hobbies and abilities."
@@ -515,10 +515,10 @@ export const unit4 = {
           "t": "In the school band."
         },
         {
-          "t": "At home."
+          "t": "At his quiet home."
         },
         {
-          "t": "In a music shop."
+          "t": "In a big music shop."
         }
       ],
       "answer": 0,
@@ -552,13 +552,13 @@ export const unit4 = {
       "ask": "What does the speaker do on Saturday morning?",
       "options": [
         {
-          "t": "Have a piano lesson."
+          "t": "Have a long piano lesson."
         },
         {
           "t": "Play chess with his grandfather."
         },
         {
-          "t": "Play basketball."
+          "t": "Play basketball with his friends."
         }
       ],
       "answer": 1,
@@ -572,13 +572,13 @@ export const unit4 = {
       "ask": "How does he feel about the piano?",
       "options": [
         {
-          "t": "It is easy and fun."
+          "t": "It is easy and he has a lot of fun with it."
         },
         {
           "t": "It is difficult and he does not like it much."
         },
         {
-          "t": "It is his favourite."
+          "t": "It is his favourite and he plays it every day."
         }
       ],
       "answer": 1,

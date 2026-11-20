@@ -100,10 +100,10 @@ export const unit3 = {
           "t": "It is behind the door."
         },
         {
-          "t": "It is red."
+          "t": "It is on the desk."
         },
         {
-          "t": "It is new."
+          "t": "It is near the chair."
         }
       ],
       "answer": 0,
@@ -138,10 +138,10 @@ export const unit3 = {
           "t": "In the library."
         },
         {
-          "t": "At seven."
+          "t": "At seven o'clock."
         },
         {
-          "t": "With my mum."
+          "t": "With my good mum."
         }
       ],
       "answer": 0,
@@ -198,11 +198,11 @@ export const unit3 = {
           "img": "between"
         },
         {
-          "t": "公园旁边",
+          "t": "公园和商店旁边",
           "img": "near-park"
         },
         {
-          "t": "医院后面",
+          "t": "医院和学校后面",
           "img": "behind-hospital"
         }
       ],
@@ -300,10 +300,10 @@ export const unit3 = {
           "t": "There is a bed and a desk."
         },
         {
-          "t": "There are no books."
+          "t": "There are no books in it."
         },
         {
-          "t": "There is a kitchen in it."
+          "t": "There is a small kitchen in it."
         }
       ],
       "answer": 0,
@@ -325,10 +325,10 @@ export const unit3 = {
           "t": "Between the library and the bank."
         },
         {
-          "t": "Behind the hospital."
+          "t": "Behind the hospital and the bank."
         },
         {
-          "t": "Next to the park."
+          "t": "Next to the park and the school."
         }
       ],
       "answer": 0,
@@ -372,10 +372,10 @@ export const unit3 = {
       "ask": "Where is the football probably?",
       "options": [
         {
-          "t": "In the bathroom."
+          "t": "In the bathroom cabinet."
         },
         {
-          "t": "On the kitchen table."
+          "t": "On the kitchen table corner."
         },
         {
           "t": "Behind the living room door."
@@ -400,7 +400,7 @@ export const unit3 = {
           "t": "Looking for a football."
         },
         {
-          "t": "Buying some food."
+          "t": "Buying a football."
         },
         {
           "t": "Cleaning the kitchen."
@@ -497,13 +497,13 @@ export const unit3 = {
       "ask": "What are they talking about?",
       "options": [
         {
-          "t": "Lessons at school."
+          "t": "The lessons at school."
         },
         {
           "t": "Things in a kitchen."
         },
         {
-          "t": "Places in a park."
+          "t": "The places in a park."
         }
       ],
       "answer": 1,
@@ -597,10 +597,10 @@ export const unit3 = {
       "ask": "Where is the desk?",
       "options": [
         {
-          "t": "Next to the window."
+          "t": "Next to the window and the bed."
         },
         {
-          "t": "Under the chair."
+          "t": "Under the chair and the desk."
         },
         {
           "t": "Between the bed and the door."
@@ -634,7 +634,7 @@ export const unit3 = {
       "no": 29,
       "type": "mono",
       "audio": "Our school is near a big hospital. In front of the school there is a library. Between the school and the library there is a small shop. There are many trees behind the school. It is a nice place to study.",
-      "ask": "What is in front of the school?",
+      "ask": "What does the speaker say is in front of the school?",
       "options": [
         {
           "t": "A hospital."
@@ -647,7 +647,7 @@ export const unit3 = {
         }
       ],
       "answer": 1,
-      "point": "infer 抓 in front of",
+      "point": "提取具体信息：in front of 对应 library；小店是 between",
       "limit": 30
     },
     {
@@ -657,13 +657,13 @@ export const unit3 = {
       "ask": "What is the speaker mainly describing?",
       "options": [
         {
-          "t": "The lessons at school."
+          "t": "The lessons taught at school."
         },
         {
           "t": "The places around the school."
         },
         {
-          "t": "The teacher at school."
+          "t": "The teachers working at school."
         }
       ],
       "answer": 1,

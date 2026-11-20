@@ -53,7 +53,7 @@ export const unit1 = {
       "audio": "This little boy is my cousin.",
       "options": [
         {
-          "t": "哥哥",
+          "t": "亲哥哥",
           "img": "brother"
         },
         {
@@ -61,7 +61,7 @@ export const unit1 = {
           "img": "cousin"
         },
         {
-          "t": "叔叔",
+          "t": "亲叔叔",
           "img": "uncle"
         }
       ],
@@ -119,7 +119,7 @@ export const unit1 = {
       "audio": "We live together in Beijing.",
       "options": [
         {
-          "t": "一起玩",
+          "t": "一起玩耍",
           "img": "play"
         },
         {
@@ -127,7 +127,7 @@ export const unit1 = {
           "img": "home"
         },
         {
-          "t": "分开住",
+          "t": "分开居住",
           "img": "apart"
         }
       ],
@@ -141,10 +141,10 @@ export const unit1 = {
       "audio": "Who is he?",
       "options": [
         {
-          "t": "He is ten."
+          "t": "He is my brother."
         },
         {
-          "t": "He is fine."
+          "t": "He is my cousin."
         },
         {
           "t": "He is my grandfather."
@@ -163,10 +163,10 @@ export const unit1 = {
           "t": "There are five."
         },
         {
-          "t": "It is five."
+          "t": "There are six."
         },
         {
-          "t": "I am five."
+          "t": "There are four."
         }
       ],
       "answer": 0,
@@ -182,10 +182,10 @@ export const unit1 = {
           "t": "She is my grandmother."
         },
         {
-          "t": "He is my father."
+          "t": "She is my aunt."
         },
         {
-          "t": "They are my parents."
+          "t": "She is my mother."
         }
       ],
       "answer": 0,
@@ -315,20 +315,20 @@ export const unit1 = {
       "audio": "My father's brother is my uncle.",
       "options": [
         {
-          "t": "表弟",
+          "t": "表哥或表弟",
           "img": "cousin"
         },
         {
-          "t": "祖父",
+          "t": "爷爷或外公",
           "img": "grandfather"
         },
         {
-          "t": "叔叔",
+          "t": "叔叔或伯伯",
           "img": "uncle"
         }
       ],
       "answer": 2,
-      "point": "名词所有格 father's",
+      "point": "father's brother 统称 uncle（中文分叔叔、伯伯）",
       "limit": 20
     },
     {
@@ -347,10 +347,10 @@ export const unit1 = {
           "t": "Sam's grandfather."
         },
         {
-          "t": "Sam's father."
+          "t": "Sam's stepfather."
         },
         {
-          "t": "Sam's cousin."
+          "t": "Sam's grandson."
         }
       ],
       "answer": 0,
@@ -447,13 +447,13 @@ export const unit1 = {
       "ask": "Who live with Jack?",
       "options": [
         {
-          "t": "Only his friends."
+          "t": "His friends and classmates."
         },
         {
           "t": "His family and grandparents."
         },
         {
-          "t": "His teachers."
+          "t": "His teachers and neighbours."
         }
       ],
       "answer": 1,
@@ -475,10 +475,10 @@ export const unit1 = {
           "t": "He lives with his family in a flat."
         },
         {
-          "t": "He lives alone in Beijing."
+          "t": "He lives alone in a big house."
         },
         {
-          "t": "He does not like his family."
+          "t": "He lives far from his family."
         }
       ],
       "answer": 0,
@@ -547,10 +547,10 @@ export const unit1 = {
       "ask": "What are they mainly talking about?",
       "options": [
         {
-          "t": "School subjects."
+          "t": "School life together."
         },
         {
-          "t": "A birthday party."
+          "t": "A family dinner party."
         },
         {
           "t": "Family time together."
@@ -652,13 +652,13 @@ export const unit1 = {
       "ask": "How does the speaker feel about her grandparents?",
       "options": [
         {
-          "t": "She is afraid of them."
+          "t": "She fears them."
         },
         {
           "t": "She loves them."
         },
         {
-          "t": "She never sees them."
+          "t": "She misses them."
         }
       ],
       "answer": 1,
