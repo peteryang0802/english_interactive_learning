@@ -13,9 +13,9 @@ const LEVELS = [
   { id:'unit4', data:unit4, color:'#ec4899', emoji:'4', name:'Unit 4 兴趣能力', desc:'爱好、能力与才艺' },
 ];
 const KEYS=['A','B','C'];
-const AUDIO_VERSION=4;
+const AUDIO_VERSION=5;
 const withVer=f=>f+(f.includes('?')?'&':'?')+'v='+AUDIO_VERSION;
-const keyOf = q => Array.isArray(q.audio) ? q.audio.join('') : q.audio;
+const keyOf = q => Array.isArray(q.audio) ? q.audio.join('\u0001') : q.audio;
 const view = document.getElementById('view');
 const player = new Audio();
 player.preload = 'auto';
@@ -27,6 +27,10 @@ let lastSummary = null;
 const BEST_KEY='english-listening-best';
 const PROG_KEY='english-listening-progress';
 const LAST_KEY='english-listening-last';
+const PIN_KEY='english-listening-pin';
+const DEFAULT_PIN='8888';
+// 密码家长可自己改，没设置过就用默认 8888
+function loadPin(){ const v=lsGet(PIN_KEY); return (typeof v==='string'&&v)?v:DEFAULT_PIN; }
 let storageOK=true;
 function storageAvailable(){
   try{ const k='__t'; localStorage.setItem(k,'1'); localStorage.removeItem(k); return true; }
@@ -85,6 +89,7 @@ function router(){
   if(parts[1]==='parent') renderParent();
   else if(parts[1]==='intro') renderIntro(LEVELS.findIndex(l=>l.id===parts[2]),parts[3]==='challenge'?'challenge':'learn');
   else if(parts[1]==='play') beginRun(LEVELS.findIndex(l=>l.id===parts[2]),parts[3]==='challenge'?'challenge':'learn');
+  else if(parts[1]==='weak') beginWeak(LEVELS.findIndex(l=>l.id===parts[2]));
   else if(parts[1]==='result') renderResult(LEVELS.findIndex(l=>l.id===parts[2]));
   else renderHome();
 }
@@ -177,23 +182,42 @@ function beginRun(i,mode){
   if(sameRun){ qs=prog.qs.map(s=>({...s,wrongPicks:s.wrongPicks||[]})); }
   else qs=l.data.questions.map(()=>newQState());
   const startIndex=sameRun?Math.min(prog.index,l.data.questions.length-1):0;
-  run={ level:l, qs:l.data.questions, states:qs, index:startIndex, mode,
+  const order=l.data.questions.map((_,i)=>i);
+  run={ level:l, qs:l.data.questions, states:qs, index:startIndex, mode, order, weak:false,
         startTime:Date.now(), timerId:null, answerTimerId:null, timeLeft:0,
         phase:'listen', replaysLeft:mode==='challenge'?1:99, audioState:'idle' };
   document.documentElement.style.setProperty('--c', l.color);
   renderQuestion();
 }
-function cur(){ return run.qs[run.index]; }
+// order 是当前练习包含的原题索引：正常模式是全部 0..29，错题练习只放卡住的题
+function cur(){ return run.qs[run.order[run.index]]; }
 function cst(){ return run.states[run.index]; }
+function runTotal(){ return run.order.length; }
+function beginWeak(i){
+  if(i<0){ location.hash='#/home'; return; }
+  const l=LEVELS[i];
+  // 优先用内存里最新的结算，刷新后从持久化的整关 summary 取错题索引
+  const src=(lastSummary&&lastSummary.id===l.id)?lastSummary:loadLast()[l.id];
+  const order=src&&Array.isArray(src.weakIdx)?src.weakIdx.slice():[];
+  if(!order.length){ location.hash='#/home'; return; }
+  const states=order.map(()=>newQState());
+  run={ level:l, qs:l.data.questions, states, index:0, mode:'learn', order, weak:true,
+        startTime:Date.now(), timerId:null, answerTimerId:null, timeLeft:0,
+        phase:'listen', replaysLeft:99, audioState:'idle' };
+  document.documentElement.style.setProperty('--c', l.color);
+  renderQuestion();
+}
 
 function persist(){
+  // 错题练习不写正常进度，避免和整关的"继续上次"互相打架
+  if(run.weak) return;
   lsSet(PROG_KEY,{ levelId:run.level.id, mode:run.mode, index:run.index, qs:run.states, updatedAt:Date.now() });
 }
 
 function renderQuestion(){
   const q=cur(); const st=cst();
   run.phase='listen'; run.replaysLeft=run.mode==='challenge'?1:99;
-  const pct=Math.round(run.index/run.qs.length*100);
+  const pct=Math.round(run.index/runTotal()*100);
   let head='';
   if(q.type==='dialog'||q.type==='mono') head=esc(q.ask);
   else if(q.type==='judge') head=`<span class="screen-hint"><span class="pic">👀</span>${esc(q.screen.t)}</span>`;
@@ -204,11 +228,11 @@ function renderQuestion(){
       <div class="play-top">
         <button class="btn-back" id="btn-back">‹</button>
         <div class="progress-wrap">
-          <div class="progress-label"><span>${esc(run.level.name)}</span><span>第 ${run.index+1} / ${run.qs.length} 题</span></div>
+          <div class="progress-label"><span>${run.weak?'错题练习 · ':''}${esc(run.level.name)}</span><span>第 ${run.index+1} / ${runTotal()} 题</span></div>
           <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
         </div>
       </div>
-      <div class="mode-row"><span class="mode-tag">${run.mode==='challenge'?'🏆 挑战模式':'📘 学习模式'}</span><span class="answer-window" id="answer-window"></span></div>
+      <div class="mode-row"><span class="mode-tag">${run.weak?'🎯 错题精准练习':(run.mode==='challenge'?'🏆 挑战模式':'📘 学习模式')}</span><span class="answer-window" id="answer-window"></span></div>
 
       <div class="q-stage">
         <button class="audio-btn" id="audio-btn">▶</button>
@@ -425,25 +449,30 @@ function goNext(){
   const st=cst();
   if(!st.status){ st.status=st.wrongPicks.length?'wrong':null; }
   persist();
-  if(run.index<run.qs.length-1){ run.index++; renderQuestion(); }
+  if(run.index<runTotal()-1){ run.index++; renderQuestion(); }
   else finishRun();
 }
 
 // ============ 结算 ============
+function isWeakStatus(s){ return s.status==='wrong'||s.status==='corrected'||s.status==='script'; }
 function finishRun(){
   if(run.answerTimerId)cancelTimer(run.answerTimerId);
   const counts={first:0,replay:0,script:0,corrected:0,wrong:0};
   run.states.forEach(s=>{ if(s.status)counts[s.status]++; });
-  const total=run.qs.length;
-  const summary={ id:run.level.id, mode:run.mode, total, ...counts,
+  const total=runTotal();
+  // 记录本次卡住的原题索引，结算页和刷新后都能精准拉出来再练
+  const weakIdx=run.states.map((s,k)=>isWeakStatus(s)?run.order[k]:-1).filter(x=>x>=0);
+  const summary={ id:run.level.id, mode:run.mode, total, weak:run.weak, weakIdx, ...counts,
                   independent:counts.first, updatedAt:Date.now() };
   lastSummary=summary;
+  lsRemove(PROG_KEY);
+  // 错题练习不写最佳成绩，也不覆盖整关 summary，只在内存里给结算页看
+  if(run.weak){ location.hash='#/result/'+run.level.id; return; }
   // 最佳成绩只认首听独立
   const best=loadBest(); const prev=best[run.level.id];
   if(!prev||counts.first>prev.first) best[run.level.id]={first:counts.first,total};
   lsSet(BEST_KEY,best);
   const allLast=loadLast(); allLast[run.level.id]=summary; lsSet(LAST_KEY,allLast);
-  lsRemove(PROG_KEY);
   location.hash='#/result/'+run.level.id;
 }
 
@@ -455,7 +484,10 @@ function renderResult(i){
   if(!s){ location.hash='#/home'; return; }
   const indRate=Math.round(s.independent/s.total*100);
   const deg=indRate*3.6;
-  const title=indRate>=90?'首听基本全懂':indRate>=60?'大部分能听懂':'还需要多听';
+  let title;
+  if(s.weak) title=s.independent===s.total?'这些题这次都听对了':'还有没听对的，再练一轮';
+  else title=indRate>=90?'首听基本全懂':indRate>=60?'大部分能听懂':'还需要多听';
+  const hasWeak=(s.weakIdx&&s.weakIdx.length>0);
   view.innerHTML=`
     <div class="result">
       <div class="result-card" style="--c:${l.color}">
@@ -472,20 +504,22 @@ function renderResult(i){
         </div>
       </div>
       <div class="result-actions">
-        <button class="btn-primary" style="--c:${l.color}" id="practice-weak">练刚才卡住的题</button>
-        <button class="btn-ghost" id="retry">整关重来</button>
-        <button class="btn-ghost" id="home">返回首页</button>
+        ${s.weak
+          ? `<button class="btn-primary" style="--c:${l.color}" id="practice-weak" ${hasWeak?'':'disabled'}>再练还错的题（${hasWeak?s.weakIdx.length:0}）</button>
+             <button class="btn-ghost" id="home">返回首页</button>`
+          : `<button class="btn-primary" style="--c:${l.color}" id="practice-weak" ${hasWeak?'':'disabled'}>练刚才卡住的题${hasWeak?'（'+s.weakIdx.length+'）':''}</button>
+             <button class="btn-ghost" id="retry">整关重来</button>
+             <button class="btn-ghost" id="home">返回首页</button>`}
       </div>
     </div>`;
-  document.getElementById('practice-weak').addEventListener('click',()=>{
-    location.hash='#/play/'+l.id+'/learn';
-  });
-  document.getElementById('retry').addEventListener('click',()=>location.hash='#/intro/'+l.id);
+  const pw=document.getElementById('practice-weak');
+  if(pw) pw.addEventListener('click',()=>{ location.hash='#/weak/'+l.id; });
+  const rt=document.getElementById('retry');
+  if(rt) rt.addEventListener('click',()=>location.hash='#/intro/'+l.id);
   document.getElementById('home').addEventListener('click',()=>location.hash='#/home');
 }
 
 // ============ 家长管理（密码 + 完整清除） ============
-const PARENT_PIN='2024';
 function renderParent(){
   if(!parentUnlocked){ return renderParentGate(); }
   const best=loadBest(); const prog=loadProgress(); const allLast=loadLast();
@@ -515,11 +549,28 @@ function renderParent(){
       <button class="btn-danger ${parentConfirm==='all'?'armed':''}" id="clear-all">
         ${parentConfirm==='all'?'再次点击，确认全部清除':'一键清除全部记录'}
       </button>
+      <div class="parent-card pin-change">
+        <span class="rec-name">修改家长密码</span>
+        <div class="pin-change-row">
+          <input type="password" inputmode="numeric" id="new-pin" class="pin-input" placeholder="4 位新密码" maxlength="6" />
+          <button class="btn-primary" id="save-pin">保存密码</button>
+        </div>
+        <div class="pin-err hidden" id="pin-msg"></div>
+      </div>
       <button class="btn-ghost" id="parent-back">返回首页</button>
     </div>`;
   view.querySelectorAll('.rec-clear').forEach(b=>b.addEventListener('click',()=>onParentClear(b.dataset.id)));
   document.getElementById('clear-all').addEventListener('click',()=>onParentClear('all'));
+  document.getElementById('save-pin').addEventListener('click',savePin);
   document.getElementById('parent-back').addEventListener('click',()=>location.hash='#/home');
+}
+function savePin(){
+  const v=document.getElementById('new-pin').value.trim();
+  const msg=document.getElementById('pin-msg');
+  if(!/^\d{4,6}$/.test(v)){ msg.textContent='请输入 4 到 6 位数字'; msg.classList.remove('hidden'); return; }
+  lsSet(PIN_KEY,v);
+  msg.className='pin-err ok'; msg.textContent='密码已保存'; msg.classList.remove('hidden');
+  document.getElementById('new-pin').value='';
 }
 let parentUnlocked=false;
 function renderParentGate(){
@@ -527,7 +578,7 @@ function renderParentGate(){
     <div class="parent gate">
       <div class="parent-card gate-card">
         <h2>家长验证</h2>
-        <p>请输入家长密码（孩子的入学年份）</p>
+        <p>请输入家长密码（默认 8888，可在面板内修改）</p>
         <input type="password" inputmode="numeric" id="pin" class="pin-input" placeholder="4 位数字" />
         <button class="btn-primary" id="pin-ok">进入</button>
         <div class="pin-err hidden" id="pin-err">密码不对</div>
@@ -540,7 +591,7 @@ function renderParentGate(){
 }
 function checkPin(){
   const v=document.getElementById('pin').value;
-  if(v===PARENT_PIN){ parentUnlocked=true; renderParent(); }
+  if(v===loadPin()){ parentUnlocked=true; renderParent(); }
   else document.getElementById('pin-err').classList.remove('hidden');
 }
 function onParentClear(id){
