@@ -4,6 +4,9 @@ import { unit2 } from './data/unit2.js';
 import { unit3 } from './data/unit3.js';
 import { unit4 } from './data/unit4.js';
 import { audioMap } from './audio-map.js';
+import { playCorrect, playWrong, unlockAudio } from './sfx.js?v=1';
+import { showCelebration } from './celebrate.js?v=1';
+import { setQuizView, beginQuiz, renderQuizResult, getQuizBest } from './quiz.js?v=1';
 
 const LEVELS = [
   { id:'starter', data:starter, color:'#3b82f6', emoji:'S', name:'Starter 入门', desc:'入门词汇与日常表达' },
@@ -22,6 +25,7 @@ player.preload = 'auto';
 document.body.appendChild(player);
 let run = null;
 let lastSummary = null;
+let homeMode = 'listen'; // 首页当前选的大模块：听力 / 单选
 
 // ============ 存储（带可用性检测，失败降级内存） ============
 const BEST_KEY='english-listening-best';
@@ -91,6 +95,8 @@ function router(){
   else if(parts[1]==='play') beginRun(LEVELS.findIndex(l=>l.id===parts[2]),parts[3]==='challenge'?'challenge':'learn');
   else if(parts[1]==='weak') beginWeak(LEVELS.findIndex(l=>l.id===parts[2]));
   else if(parts[1]==='result') renderResult(LEVELS.findIndex(l=>l.id===parts[2]));
+  else if(parts[1]==='quiz') beginQuiz(LEVELS, LEVELS.findIndex(l=>l.id===parts[2]));
+  else if(parts[1]==='quiz-result') renderQuizResult(LEVELS, LEVELS.findIndex(l=>l.id===parts[2]));
   else renderHome();
 }
 window.addEventListener('hashchange',router);
@@ -106,27 +112,35 @@ function resetParentConfirm(){ parentConfirm=null; if(parentConfirmTimer){ clear
 // ============ 首页 ============
 function renderHome(){
   storageOK=storageAvailable();
-  const best=loadBest(); const prog=loadProgress();
+  const listenBest=loadBest(); const quizBest=getQuizBest(); const prog=loadProgress();
   view.innerHTML=`
     <div class="home-head">
-      <h1>英语听力闯关</h1>
-      <p>北师大版七年级上册 · 5 关 150 题 · 先听懂再作答</p>
+      <h1>英语闯关</h1>
+      <p>北师大版七年级上册 · 5 关 150 题</p>
     </div>
+    <div class="mode-switch">
+      <button id="tab-listen" class="${homeMode==='listen'?'active':''}">🎧 听力闯关</button>
+      <button id="tab-quiz" class="${homeMode==='quiz'?'active':''}">📝 单选闯关</button>
+    </div>
+    ${homeMode==='listen'?`
     <div class="quick-actions">
       <button class="btn-primary" id="quick-start">▶ 先听 3 题试试</button>
       ${prog?`<button class="btn-continue" id="continue">继续上次：${LEVELS.find(l=>l.id===prog.levelId).name} 第 ${prog.index+1} 题</button>`:''}
-    </div>
-    <div class="home-section-label">选择关卡（成绩按“首听独立答对”记录）</div>
+    </div>`:''}
+    <div class="home-section-label">${homeMode==='listen'
+      ? '选择关卡（成绩按“首听独立答对”记录）'
+      : '选择关卡（读句子选答案，不限时）'}</div>
     <div class="level-grid">
       ${LEVELS.map((l,i)=>{
-        const b=best[l.id];
+        const b=homeMode==='listen'?listenBest[l.id]:quizBest[l.id];
+        const btxt=b?(homeMode==='listen'?`首听独立：${b.first}/30 题`:`一次选对：${b.first}/30 题`):null;
         return `
         <button class="level-card" style="--c:${l.color}" data-i="${i}">
           <span class="level-badge">${l.emoji}</span>
           <span class="level-meta">
             <span class="name">${esc(l.name)}</span>
             <span class="desc">${esc(l.desc)} · 30 题</span>
-            ${b?`<span class="best">首听独立：${b.first}/30 题</span>`:'<span class="desc">暂无记录</span>'}
+            ${btxt?`<span class="best">${btxt}</span>`:'<span class="desc">暂无记录</span>'}
           </span>
           <span class="level-arrow">›</span>
         </button>`;
@@ -134,14 +148,17 @@ function renderHome(){
     </div>
     <div class="home-foot"><button class="parent-link" id="parent-link">家长管理</button></div>
     ${storageOK?'':'<p class="storage-warn">当前浏览器无法保存记录，本次练习结果可能不会保留</p>'}`;
-  document.getElementById('quick-start').addEventListener('click',()=>{
-    location.hash='#/play/'+LEVELS[0].id+'/learn';
-  });
-  if(prog) document.getElementById('continue').addEventListener('click',()=>{
-    location.hash='#/play/'+prog.levelId+'/'+(prog.mode||'learn');
-  });
+  document.getElementById('tab-listen').addEventListener('click',()=>{ homeMode='listen'; renderHome(); });
+  document.getElementById('tab-quiz').addEventListener('click',()=>{ homeMode='quiz'; renderHome(); });
+  const qs=document.getElementById('quick-start');
+  if(qs) qs.addEventListener('click',()=>{ location.hash='#/play/'+LEVELS[0].id+'/learn'; });
+  const ct=document.getElementById('continue');
+  if(ct) ct.addEventListener('click',()=>{ location.hash='#/play/'+prog.levelId+'/'+(prog.mode||'learn'); });
   view.querySelectorAll('.level-card').forEach(b=>
-    b.addEventListener('click',()=>location.hash='#/intro/'+LEVELS[b.dataset.i].id+'/learn'));
+    b.addEventListener('click',()=>{
+      const id=LEVELS[b.dataset.i].id;
+      location.hash=homeMode==='listen'?'#/intro/'+id+'/learn':'#/quiz/'+id;
+    }));
   document.getElementById('parent-link').addEventListener('click',()=>location.hash='#/parent');
 }
 
@@ -386,6 +403,7 @@ function choose(k){
     st.finalPick=k;
     lockFinal(k,q.answer);
     feedbackOk(st.status);
+    playCorrect();
     persist(); showNext();
   }else{
     st.wrongPicks.push(k);
@@ -394,6 +412,7 @@ function choose(k){
     const fb=document.getElementById('feedback');
     fb.className='feedback no';
     fb.innerHTML=`再听听看 · 线索：${esc(q.point)}`;
+    playWrong();
     persist();
     // 挑战模式若在作答窗口内答错，允许在剩余时间改；学习模式不限时
   }
@@ -406,6 +425,7 @@ function timeOut(){
   lockFinal(-1,cur().answer);
   const fb=document.getElementById('feedback');
   fb.className='feedback no'; fb.textContent='时间到！正确答案已标出';
+  playWrong();
   persist(); showNext();
 }
 
@@ -473,6 +493,8 @@ function finishRun(){
   if(!prev||counts.first>prev.first) best[run.level.id]={first:counts.first,total};
   lsSet(BEST_KEY,best);
   const allLast=loadLast(); allLast[run.level.id]=summary; lsSet(LAST_KEY,allLast);
+  // 首听独立全对，给完美庆祝；订正后才全对不算，保持庆祝的分量
+  if(counts.first===total) showCelebration();
   location.hash='#/result/'+run.level.id;
 }
 
@@ -613,6 +635,11 @@ function onParentClear(id){
 
 // 启动
 storageOK=storageAvailable();
+setQuizView(view);
 migrateStorage();
+// 第一次点屏幕或按键就解锁音频，之后鼓励/庆祝才能出声
+function onFirstGesture(){ unlockAudio(); document.removeEventListener('pointerdown',onFirstGesture); document.removeEventListener('keydown',onFirstGesture); }
+document.addEventListener('pointerdown',onFirstGesture);
+document.addEventListener('keydown',onFirstGesture);
 location.hash=location.hash||'#/home';
 router();

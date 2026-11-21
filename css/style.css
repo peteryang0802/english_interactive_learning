@@ -210,3 +210,72 @@ button { font-family:inherit; cursor:pointer; border:none; background:none; colo
   .q-actions { grid-column:2; grid-row:5; }
   .q-actions .btn-primary { width:240px; margin:0 auto; }
 }
+
+/* ===== 首页：听力 / 单选 切换 ===== */
+.mode-switch {
+  display:grid; grid-template-columns:1fr 1fr; gap:6px;
+  background:#fff; padding:6px; border-radius:14px; box-shadow:var(--shadow); margin-bottom:18px;
+}
+.mode-switch button {
+  min-height:44px; border-radius:10px; font-size:15px; font-weight:700; color:var(--sub);
+}
+.mode-switch button.active { background:var(--c,var(--blue)); color:#fff; }
+
+/* ===== 单选闯关：题干 ===== */
+.quiz-stage { text-align:left; }
+.quiz-sentence { font-size:20px; font-weight:700; text-align:center; line-height:1.6; color:var(--ink); }
+.quiz-ask { margin-top:14px; font-size:16px; font-weight:700; color:var(--c); text-align:center; }
+.quiz-scene { background:var(--bg); border-radius:12px; padding:12px; text-align:center; font-size:16px; font-weight:700; margin-bottom:14px; }
+.quiz-passage { font-size:15px; line-height:1.7; color:var(--ink); background:var(--bg); padding:14px; border-radius:12px; }
+.quiz-dialog { display:grid; gap:10px; }
+.dl-line { display:flex; gap:10px; align-items:flex-start; }
+.dl-line.alt { flex-direction:row-reverse; }
+.dl-who { flex:0 0 26px; width:26px; height:26px; border-radius:50%; background:var(--c); color:#fff; display:grid; place-items:center; font-size:13px; font-weight:700; }
+.dl-line.alt .dl-who { background:var(--purple); }
+.dl-text { background:var(--bg); border-radius:12px; padding:9px 12px; font-size:15px; line-height:1.5; }
+
+/* ===== 全对庆祝 ===== */
+.celebrate-overlay {
+  position:fixed; inset:0; z-index:1000; overflow:hidden;
+  background:radial-gradient(circle at 50% 38%, rgba(255,255,255,.94), rgba(253,242,248,.97));
+  display:flex; align-items:center; justify-content:center;
+  animation:cel-fade .35s ease;
+}
+.celebrate-overlay.cel-leave { animation:cel-fade-out .35s ease forwards; }
+@keyframes cel-fade { from{opacity:0} to{opacity:1} }
+@keyframes cel-fade-out { to{opacity:0} }
+.cel-center { position:relative; z-index:2; text-align:center; animation:cel-pop .5s cubic-bezier(.2,1.4,.4,1); }
+@keyframes cel-pop { 0%{transform:scale(.4);opacity:0} 100%{transform:scale(1);opacity:1} }
+.cel-flower { position:relative; width:130px; height:130px; margin:0 auto 18px; animation:flower-spin 7s linear infinite; }
+@keyframes flower-spin { to{transform:rotate(360deg)} }
+.cel-petal {
+  position:absolute; left:50%; top:50%; width:38px; height:52px;
+  margin-left:-19px; margin-top:-26px; border-radius:50%;
+  background:linear-gradient(180deg,#fda4af,#f43f5e);
+  box-shadow:inset 0 -4px 8px rgba(0,0,0,.08);
+  transform:rotate(var(--r)) translateY(-32px);
+  animation:cel-bloom .55s ease backwards;
+}
+.cel-petal:nth-child(2){animation-delay:.06s}.cel-petal:nth-child(3){animation-delay:.12s}
+.cel-petal:nth-child(4){animation-delay:.18s}.cel-petal:nth-child(5){animation-delay:.24s}
+.cel-petal:nth-child(6){animation-delay:.3s}
+@keyframes cel-bloom { from{opacity:0;transform:rotate(var(--r)) translateY(-10px) scale(.4)} }
+.cel-core {
+  position:absolute; left:50%; top:50%; width:36px; height:36px; margin:-18px 0 0 -18px;
+  border-radius:50%; z-index:2; background:radial-gradient(circle at 35% 35%,#fde047,#f59e0b);
+  box-shadow:0 2px 6px rgba(0,0,0,.15);
+}
+.cel-title { font-size:30px; font-weight:800; color:#e11d48; text-shadow:0 2px 0 #fff; }
+.cel-sub { margin-top:8px; font-size:18px; color:#db2777; font-weight:700; }
+.cel-hint { position:absolute; bottom:28px; left:0; right:0; text-align:center; color:#9ca3af; font-size:13px; }
+.cel-pieces { position:absolute; inset:0; pointer-events:none; }
+.cel-piece {
+  position:absolute; top:-8%;
+  animation:cel-fall var(--du) linear var(--d) infinite;
+}
+.cel-piece.paper { border-radius:3px; }
+@keyframes cel-fall {
+  0%{ transform:translateY(-10vh) rotate(0); opacity:0; }
+  10%{ opacity:1; }
+  100%{ transform:translateY(115vh) rotate(720deg); opacity:.9; }
+}
