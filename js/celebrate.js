@@ -8,8 +8,9 @@ let overlay = null;
 let autoTimer = null;
 
 export function showCelebration(){
-  playCelebrate();
+  // 先把可能存在的旧庆祝收掉，再播新的，避免 stopSfx 把刚起的人声掐断
   closeCelebration();
+  playCelebrate();
 
   overlay = document.createElement('div');
   overlay.className = 'celebrate-overlay';
